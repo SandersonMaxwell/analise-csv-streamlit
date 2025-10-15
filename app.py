@@ -7,8 +7,8 @@ st.set_page_config(page_title="Calculadora de Cashback", page_icon="📊", layou
 st.title("📊 Calculadora de Cashback")
 
 st.markdown("""
-Envie um arquivo CSV **Analise de cashback**:
-Obs: Antes de exportar o aqrquivo no backoffice lembre-se de conferir a data correta e filtrar o campo Freespin como FALSE.
+Envie um arquivo CSV **Analise de cashback**:"""
+"""Obs: Antes de exportar o aqrquivo no backoffice lembre-se de conferir a data correta e filtrar o campo Freespin como FALSE.
 """)
 
 # Função para definir a porcentagem conforme o número de rodadas
@@ -99,6 +99,7 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
