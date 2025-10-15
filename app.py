@@ -7,9 +7,9 @@ st.set_page_config(page_title="Calculadora de Cashback", page_icon="📊", layou
 st.title("📊 Calculadora de Cashback")
 
 st.markdown("""
-Envie um arquivo CSV das jogadas do user:
-    1️⃣  Filtre a data correta  
-    2️⃣ Filtre a coluna freespins como FALSE   
+Envie um arquivo CSV das jogadas do user:  
+1️⃣  Filtre a data correta  
+2️⃣ Filtre a coluna freespins como FALSE   
 """)
 
 # Função para definir a porcentagem conforme o número de rodadas
@@ -100,6 +100,7 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
