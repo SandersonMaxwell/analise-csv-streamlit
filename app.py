@@ -105,13 +105,14 @@ if uploaded_file:
             if percentual < 0.05:
                 motivos.append(f"percentual aplicado menor que 5% ({percentual*100:.0f}%)")
             if resultado_final < 10:
-                motivos.append(f"valor final menor que R$10 (valor minimo de perdas para receber cashback) ({formatar_brl(resultado_final)})")
+                motivos.append(f"valor final menor que R$10 ({formatar_brl(resultado_final)})")
             st.info("Motivo(s): " + ", ".join(motivos))
         else:
             st.success(f"✅ O jogador deve receber **{formatar_brl(resultado_final)}** em cashback!")
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
