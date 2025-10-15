@@ -9,7 +9,7 @@ st.title("📊 Calculadora de Rodadas — CSV Financeiro")
 st.markdown("""
 Procedimento:  
 1️⃣ Filtre a data da semana de cashback  
-2️⃣ Filtre a coluna FREE SPINS como FALSE 
+2️⃣ Filtre a coluna FREE SPINS como FALSE  
 3️⃣ Exporte como .CSV 
 """)
 
@@ -112,5 +112,6 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
