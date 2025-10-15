@@ -7,10 +7,10 @@ st.set_page_config(page_title="Calculadora de Rodadas", page_icon="📊", layout
 st.title("📊 Analisador de CSV — Cálculo de Rodadas")
 
 st.markdown("""
-Envie um arquivo CSV contendo:
-- **Coluna A:** número da rodada  
-- **Coluna B:** valor 1  
-- **Coluna C:** valor 2  
+Envie um arquivo CSV contendo **3 colunas**:
+1️⃣ Primeira = Rodada (coluna A)  
+2️⃣ Segunda = Valor 1 (coluna B)  
+3️⃣ Terceira = Valor 2 (coluna C)  
 """)
 
 # Função para definir a porcentagem conforme o número de rodadas
@@ -34,14 +34,13 @@ def calcular_percentual(qtd_rodadas):
     for (min_r, max_r, perc) in regras:
         if min_r <= qtd_rodadas <= max_r:
             return perc
-    return 0  # Caso não se encaixe em nenhuma regra
+    return 0  # caso não se encaixe em nenhuma regra
 
 # Upload do CSV
 uploaded_file = st.file_uploader("Envie o arquivo CSV", type=["csv"])
 
 if uploaded_file:
     try:
-        # Leitura do arquivo
         raw = uploaded_file.read().decode("utf-8")
 
         # Detecta separador automático
@@ -52,7 +51,18 @@ if uploaded_file:
         st.subheader("Pré-visualização dos dados:")
         st.dataframe(df.head())
 
-        # Substituir ponto por vírgula (mas converter pra número depois)
+        # Verifica se há pelo menos 3 colunas
+        if len(df.columns) < 3:
+            st.error("O CSV precisa ter pelo menos 3 colunas (A, B e C).")
+            st.stop()
+
+        # Renomeia as 3 primeiras colunas para A, B, C
+        df.columns = ['A', 'B', 'C'] + list(df.columns[3:])
+
+        # Substitui ponto por vírgula (para exibir bonito)
+        df = df.replace('.', ',', regex=True)
+
+        # Converte colunas B e C para número (substituindo vírgula por ponto)
         for col in ['B', 'C']:
             df[col] = df[col].astype(str).str.replace('.', '').str.replace(',', '.')
             df[col] = pd.to_numeric(df[col], errors='coerce')
