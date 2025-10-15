@@ -4,7 +4,7 @@ import io
 
 st.set_page_config(page_title="Calculadora de Rodadas", page_icon="📊", layout="centered")
 
-st.title("📊 Calculadora de Rodadas — CSV Financeiro")
+st.title("📊 Calculadora de Cashback")
 
 st.markdown("""
 Procedimento:  
@@ -112,6 +112,7 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
