@@ -4,13 +4,13 @@ import io
 
 st.set_page_config(page_title="Calculadora de Rodadas", page_icon="📊", layout="centered")
 
-st.title("📊 Analisador de CSV — Cálculo de Rodadas")
+st.title("📊 Calculadora de Rodadas — CSV Financeiro")
 
 st.markdown("""
 Envie um arquivo CSV contendo **3 colunas**:
-1️⃣ Primeira = Rodada (coluna A)  
-2️⃣ Segunda = Valor 1 (coluna B)  
-3️⃣ Terceira = Valor 2 (coluna C)  
+1️⃣ Coluna 1 = Rodada (coluna A)  
+2️⃣ Coluna 2 = Valor 1 (coluna B)  
+3️⃣ Coluna 3 = Valor 2 (coluna C)  
 """)
 
 # Função para definir a porcentagem conforme o número de rodadas
@@ -36,36 +36,47 @@ def calcular_percentual(qtd_rodadas):
             return perc
     return 0  # caso não se encaixe em nenhuma regra
 
-# Upload do CSV
+# Função segura para converter números do CSV
+def converter_numero(valor):
+    if pd.isna(valor):
+        return 0
+    v = str(valor).strip()
+    # Remove espaços
+    v = v.replace(' ', '')
+    # Detecta vírgula decimal
+    if ',' in v and '.' in v:
+        # ponto = milhar, vírgula = decimal
+        v = v.replace('.', '').replace(',', '.')
+    elif ',' in v:
+        v = v.replace(',', '.')
+    else:
+        # ponto decimal ou só número
+        v = v
+    try:
+        return float(v)
+    except:
+        return 0
+
+# Upload CSV
 uploaded_file = st.file_uploader("Envie o arquivo CSV", type=["csv"])
 
 if uploaded_file:
     try:
         raw = uploaded_file.read().decode("utf-8")
-
-        # Detecta separador automático
         sep = ',' if raw.count(',') > raw.count(';') else ';'
         df = pd.read_csv(io.StringIO(raw), sep=sep)
 
-        # Mostra preview
-        st.subheader("Pré-visualização dos dados:")
-        st.dataframe(df.head())
-
-        # Verifica se há pelo menos 3 colunas
+        # Verifica colunas
         if len(df.columns) < 3:
             st.error("O CSV precisa ter pelo menos 3 colunas (A, B e C).")
             st.stop()
 
-        # Renomeia as 3 primeiras colunas para A, B, C
+        # Renomeia as 3 primeiras colunas
         df.columns = ['A', 'B', 'C'] + list(df.columns[3:])
 
-        # Substitui ponto por vírgula (para exibir bonito)
-        df = df.replace('.', ',', regex=True)
-
-        # Converte colunas B e C para número (substituindo vírgula por ponto)
-        for col in ['B', 'C']:
-            df[col] = df[col].astype(str).str.replace('.', '').str.replace(',', '.')
-            df[col] = pd.to_numeric(df[col], errors='coerce')
+        # Converte B e C com função segura
+        df['B'] = df['B'].apply(converter_numero)
+        df['C'] = df['C'].apply(converter_numero)
 
         # Soma das colunas
         soma_b = df['B'].sum()
