@@ -92,7 +92,7 @@ if uploaded_file:
         st.write(f"**Total apostado:** {formatar_brl(soma_b)}")
         st.write(f"**Payout:** {formatar_brl(soma_c)}")
         st.write(f"**Perdas (BET - Payout):** {formatar_brl(diferenca)}")
-        st.write(f"**Número de rodadas (coluna A):** {qtd_rodadas}")
+        st.write(f"**Número de rodadas:** {qtd_rodadas}")
         st.write(f"**Percentual aplicado:** {percentual * 100:.0f}%")
         st.write(f"**Valor a ser creditado:** {formatar_brl(resultado_final)}")
 
@@ -112,6 +112,7 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
