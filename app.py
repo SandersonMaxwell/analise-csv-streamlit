@@ -7,10 +7,7 @@ st.set_page_config(page_title="Calculadora de Rodadas", page_icon="📊", layout
 st.title("📊 Calculadora de Rodadas — CSV Financeiro")
 
 st.markdown("""
-Envie um arquivo CSV contendo **3 colunas**:
-1️⃣ Coluna 1 = Rodada (coluna A)  
-2️⃣ Coluna 2 = Valor 1 (coluna B)  
-3️⃣ Coluna 3 = Valor 2 (coluna C)  
+Envie um arquivo CSV **Analise de cashback**:
 """)
 
 # Função para definir a porcentagem conforme o número de rodadas
@@ -100,3 +97,4 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
