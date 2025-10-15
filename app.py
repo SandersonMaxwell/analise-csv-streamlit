@@ -93,8 +93,10 @@ if uploaded_file:
                 motivos.append(f"valor final menor que 10 ({resultado_final:,.2f})")
             st.info("Motivo(s): " + ", ".join(motivos))
         else:
-            st.success(f"✅ O jogador deve receber **{resultado_final:,.2f}** em cashback!")
+          valor_brl = f"R${resultado_final:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        st.success(f"✅ O jogador deve receber **{valor_brl}** em cashback!")
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
