@@ -7,10 +7,10 @@ st.set_page_config(page_title="Calculadora de Rodadas", page_icon="📊", layout
 st.title("📊 Calculadora de Rodadas — CSV Financeiro")
 
 st.markdown("""
-Envie um arquivo CSV contendo **3 colunas**:
-1️⃣ Coluna 1 = Rodada (coluna A)  
-2️⃣ Coluna 2 = Valor 1 (coluna B)  
-3️⃣ Coluna 3 = Valor 2 (coluna C)  
+Procedimento:
+1️⃣ Filtre a data da semana de cashback  
+2️⃣ Filtre a coluna FREE SPINS como FALSE 
+3️⃣ Exporte como .CSV 
 """)
 
 # -----------------------------
@@ -89,9 +89,9 @@ if uploaded_file:
         # Exibe resultados
         # -----------------------------
         st.subheader("📈 Resultados:")
-        st.write(f"**Soma da coluna B:** {formatar_brl(soma_b)}")
-        st.write(f"**Soma da coluna C:** {formatar_brl(soma_c)}")
-        st.write(f"**Diferença (B - C):** {formatar_brl(diferenca)}")
+        st.write(f"**Total apostado:** {formatar_brl(soma_b)}")
+        st.write(f"**Payout:** {formatar_brl(soma_c)}")
+        st.write(f"**Perdas (BET - Payout):** {formatar_brl(diferenca)}")
         st.write(f"**Número de rodadas (coluna A):** {qtd_rodadas}")
         st.write(f"**Percentual aplicado:** {percentual * 100:.0f}%")
         st.write(f"**Resultado final:** {formatar_brl(resultado_final)}")
@@ -112,3 +112,4 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
