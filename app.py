@@ -2,35 +2,17 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="Calculadora de Rodadas", page_icon="📊", layout="centered")
+st.set_page_config(page_title="Calculadora de Cashback", page_icon="📊", layout="centered")
 
-# -----------------------------
-# Cabeçalho e explicação
-# -----------------------------
-st.title("📊 Calculadora de Rodadas — CSV Financeiro")
+st.title("📊 Calculadora de Cashback")
+
 
 st.markdown("""
-### ℹ️ Sobre a Ferramenta
-
-Esta ferramenta foi criada para **analisar arquivos CSV de rodadas e calcular o valor de cashback** que um jogador pode receber.
-
-Basta **enviar o arquivo CSV** com três colunas:
-- **A:** Número das rodadas  
-- **B:** Valor de entrada (bet ou entrada)  
-- **C:** Valor de saída (payout ou saída)
-
-O sistema faz todo o trabalho automaticamente:
-- Corrige números com vírgula e ponto  
-- Soma as colunas  
-- Calcula a diferença entre ganhos e perdas  
-- Conta o total de rodadas  
-- Aplica a **porcentagem de cashback** conforme as regras  
-- E mostra o **resultado final em reais (R$)**  
-
-Se o jogador **não atingir os requisitos mínimos**, o app explica o motivo.  
-Caso contrário, exibe o **valor exato do cashback** 💰
+Procedimento:  
+1️⃣ Filtre a data da semana de cashback  
+2️⃣ Filtre a coluna FREE SPINS como FALSE  
+3️⃣ Exporte como .CSV 
 """)
-
 # -----------------------------
 # Funções auxiliares
 # -----------------------------
@@ -123,12 +105,13 @@ if uploaded_file:
         # Exibe resultados
         # -----------------------------
         st.subheader("📈 Resultados:")
-        st.write(f"**Soma da coluna B (Bet):** {formatar_brl(soma_b)}")
-        st.write(f"**Soma da coluna C (Payout):** {formatar_brl(soma_c)}")
-        st.write(f"**Diferença (B - C):** {formatar_brl(diferenca)}")
+        st.write(f"**Total apostado:** {formatar_brl(soma_b)}")
+        st.write(f"**Payout:** {formatar_brl(soma_c)}")
+        st.write(f"**Perdas (BET - Payout):** {formatar_brl(diferenca)}")
         st.write(f"**Número de rodadas:** {qtd_rodadas}")
         st.write(f"**Percentual aplicado:** {percentual * 100:.0f}%")
-        st.write(f"**Resultado final:** {formatar_brl(resultado_final)}")
+        st.write(f"**Valor a ser creditado:** {formatar_brl(resultado_final)}")
+
 
         # -----------------------------
         # Lógica de cashback
@@ -158,3 +141,4 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
