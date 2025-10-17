@@ -70,7 +70,14 @@ if uploaded_file:
         if len(df.columns) < 3:
             st.error("O CSV precisa ter pelo menos 3 colunas (A, B e C).")
             st.stop()
+  # -----------------------------
+        # Identificação automática das colunas
+        # -----------------------------
+        colunas_lower = [c.lower() for c in df.columns]
 
+        coluna_a = df.columns[0]  # rodadas (primeira coluna)
+        coluna_b = next((c for c in df.columns if 'bet' in c.lower() or 'entrada' in c.lower()), None)
+        coluna_c = next((c for c in df.columns if 'payout' in c.lower() or 'saida' in c.lower()), None)
         # Renomeia colunas
         df.columns = ['A', 'B', 'C'] + list(df.columns[3:])
         df['B'] = df['B'].apply(converter_numero)
@@ -112,6 +119,7 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
