@@ -2,21 +2,38 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="Calculadora de Cashback", page_icon="📊", layout="centered")
+st.set_page_config(page_title="Calculadora de Rodadas", page_icon="📊", layout="centered")
 
-st.title("📊 Calculadora de Cashback")
+# -----------------------------
+# Cabeçalho e explicação
+# -----------------------------
+st.title("📊 Calculadora de Rodadas — CSV Financeiro")
 
 st.markdown("""
-Procedimento:  
-1️⃣ Filtre a data da semana de cashback  
-2️⃣ Filtre a coluna FREE SPINS como FALSE  
-3️⃣ Exporte como .CSV 
+### ℹ️ Sobre a Ferramenta
+
+Esta ferramenta foi criada para **analisar arquivos CSV de rodadas e calcular o valor de cashback** que um jogador pode receber.
+
+Basta **enviar o arquivo CSV** com três colunas:
+- **A:** Número das rodadas  
+- **B:** Valor de entrada (bet ou entrada)  
+- **C:** Valor de saída (payout ou saída)
+
+O sistema faz todo o trabalho automaticamente:
+- Corrige números com vírgula e ponto  
+- Soma as colunas  
+- Calcula a diferença entre ganhos e perdas  
+- Conta o total de rodadas  
+- Aplica a **porcentagem de cashback** conforme as regras  
+- E mostra o **resultado final em reais (R$)**  
+
+Se o jogador **não atingir os requisitos mínimos**, o app explica o motivo.  
+Caso contrário, exibe o **valor exato do cashback** 💰
 """)
 
 # -----------------------------
 # Funções auxiliares
 # -----------------------------
-
 def calcular_percentual(qtd_rodadas):
     regras = [
         (25, 59, 0.05),
@@ -37,7 +54,7 @@ def calcular_percentual(qtd_rodadas):
     for (min_r, max_r, perc) in regras:
         if min_r <= qtd_rodadas <= max_r:
             return perc
-    return 0  # caso não se encaixe em nenhuma regra
+    return 0
 
 def converter_numero(valor):
     if pd.isna(valor):
@@ -58,7 +75,6 @@ def formatar_brl(valor):
 # -----------------------------
 # Upload do CSV
 # -----------------------------
-
 uploaded_file = st.file_uploader("Envie o arquivo CSV", type=["csv"])
 
 if uploaded_file:
@@ -68,9 +84,10 @@ if uploaded_file:
         df = pd.read_csv(io.StringIO(raw), sep=sep)
 
         if len(df.columns) < 3:
-            st.error("O CSV precisa ter pelo menos 3 colunas (A, B e C).")
+            st.error("O CSV precisa ter pelo menos 3 colunas.")
             st.stop()
-  # -----------------------------
+
+        # -----------------------------
         # Identificação automática das colunas
         # -----------------------------
         colunas_lower = [c.lower() for c in df.columns]
@@ -78,12 +95,22 @@ if uploaded_file:
         coluna_a = df.columns[0]  # rodadas (primeira coluna)
         coluna_b = next((c for c in df.columns if 'bet' in c.lower() or 'entrada' in c.lower()), None)
         coluna_c = next((c for c in df.columns if 'payout' in c.lower() or 'saida' in c.lower()), None)
-        # Renomeia colunas
-        df.columns = ['A', 'B', 'C'] + list(df.columns[3:])
+
+        if not coluna_b or not coluna_c:
+            st.error("❌ Não foi possível identificar as colunas de 'bet' e 'payout'. Verifique o cabeçalho do CSV.")
+            st.write("Dica: use nomes de colunas contendo 'bet' e 'payout' (qualquer variação de maiúsculas/minúsculas).")
+            st.stop()
+
+        # Renomeia colunas principais
+        df = df.rename(columns={coluna_a: 'A', coluna_b: 'B', coluna_c: 'C'})
+
+        # Converte valores numéricos
         df['B'] = df['B'].apply(converter_numero)
         df['C'] = df['C'].apply(converter_numero)
 
-        # Cálculos
+        # -----------------------------
+        # Cálculos principais
+        # -----------------------------
         df['Diferença'] = df['B'] - df['C']
         soma_b = df['B'].sum()
         soma_c = df['C'].sum()
@@ -96,14 +123,16 @@ if uploaded_file:
         # Exibe resultados
         # -----------------------------
         st.subheader("📈 Resultados:")
-        st.write(f"**Total apostado:** {formatar_brl(soma_b)}")
-        st.write(f"**Payout:** {formatar_brl(soma_c)}")
-        st.write(f"**Perdas (BET - Payout):** {formatar_brl(diferenca)}")
+        st.write(f"**Soma da coluna B (Bet):** {formatar_brl(soma_b)}")
+        st.write(f"**Soma da coluna C (Payout):** {formatar_brl(soma_c)}")
+        st.write(f"**Diferença (B - C):** {formatar_brl(diferenca)}")
         st.write(f"**Número de rodadas:** {qtd_rodadas}")
         st.write(f"**Percentual aplicado:** {percentual * 100:.0f}%")
-        st.write(f"**Valor a ser creditado:** {formatar_brl(resultado_final)}")
+        st.write(f"**Resultado final:** {formatar_brl(resultado_final)}")
 
+        # -----------------------------
         # Lógica de cashback
+        # -----------------------------
         if qtd_rodadas < 25 or percentual < 0.05 or resultado_final < 10:
             st.warning("❌ O jogador **não tem direito a receber cashback**.")
             motivos = []
@@ -112,22 +141,20 @@ if uploaded_file:
             if percentual < 0.05:
                 motivos.append(f"percentual aplicado menor que 5% ({percentual*100:.0f}%)")
             if resultado_final < 10:
-                motivos.append(f"valor a ser creditado menor que 10 ({formatar_brl(resultado_final)})")
+                motivos.append(f"valor final menor que 10 ({formatar_brl(resultado_final)})")
             st.info("Motivo(s): " + ", ".join(motivos))
         else:
             st.success(f"✅ O jogador deve receber **{formatar_brl(resultado_final)}** em cashback!")
 
+        # -----------------------------
+        # Conclusão
+        # -----------------------------
+        st.markdown("""
+        ---
+        ### 🏁 Conclusão  
+        Com esta ferramenta, o processo de cálculo de cashback fica **simples, rápido e confiável**.  
+        Em poucos cliques, é possível analisar rodadas, aplicar as regras de porcentagem e obter o valor exato que cada jogador deve receber — tudo automaticamente e sem erro.  
+        """)
+
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
-
-
-
-
-
-
-
-
-
-
-
