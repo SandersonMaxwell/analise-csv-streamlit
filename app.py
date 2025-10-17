@@ -129,16 +129,8 @@ if uploaded_file:
         else:
             st.success(f"✅ O jogador deve receber **{formatar_brl(resultado_final)}** em cashback!")
 
-        # -----------------------------
-        # Conclusão
-        # -----------------------------
-        st.markdown("""
-        ---
-        ### 🏁 Conclusão  
-        Com esta ferramenta, o processo de cálculo de cashback fica **simples, rápido e confiável**.  
-        Em poucos cliques, é possível analisar rodadas, aplicar as regras de porcentagem e obter o valor exato que cada jogador deve receber — tudo automaticamente e sem erro.  
-        """)
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
