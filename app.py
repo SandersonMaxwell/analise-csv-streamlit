@@ -121,10 +121,10 @@ with abas[0]:
 # ABA 2 - RESUMO POR JOGO
 # -----------------------------
 with abas[1]:
-    st.subheader("🎮 Resumo por Jogo Detalhado com Lucros")
+    st.subheader("🎮 Resumo por Jogo Detalhado e Relatório")
 
     uploaded_file2 = st.file_uploader("Envie o arquivo CSV para análise por jogo", type=["csv"], key="resumo")
-
+    
     if uploaded_file2:
         try:
             raw = uploaded_file2.read().decode("utf-8")
@@ -166,63 +166,77 @@ with abas[1]:
                 st.stop()
 
             # -----------------------------
-            # Agrupa e exibe por jogo
+            # Processamento por jogo
             # -----------------------------
             jogos = df["Game Name"].unique()
-            resumo_final = []
+            resumo_geral = []
 
             for jogo in jogos:
                 st.markdown(f"### 🎰 {jogo}")
                 df_jogo = df[df["Game Name"] == jogo]
 
-                # Rodadas reais (Free Spin = false)
+                # Rodadas reais
                 reais = df_jogo[df_jogo["Free Spin"].astype(str).str.lower() == "false"]
-                if not reais.empty:
-                    total_apostado_reais = reais['Bet'].sum()
-                    total_payout_reais = reais['Payout'].sum()
-                    lucro_reais = total_apostado_reais - total_payout_reais
-
-                    st.markdown("**Rodadas reais:**")
-                    st.write(f"Total de rodadas: {len(reais)}")
-                    st.write(f"Total apostado: {formatar_brl(total_apostado_reais)}")
-                    st.write(f"Total payout: {formatar_brl(total_payout_reais)}")
-                    st.write(f"Lucro: {formatar_brl(lucro_reais)}")
-                    st.write(f"Primeira rodada: {reais['Creation Date'].min().strftime('%d/%m/%Y %H:%M')}")
-                    st.write(f"Última rodada: {reais['Creation Date'].max().strftime('%d/%m/%Y %H:%M')}")
-                else:
-                    st.info("Sem rodadas reais.")
-
-                # Rodadas gratuitas (Free Spin = true)
+                # Rodadas gratuitas
                 gratis = df_jogo[df_jogo["Free Spin"].astype(str).str.lower() == "true"]
-                if not gratis.empty:
-                    total_apostado_gratis = gratis['Bet'].sum()
-                    total_payout_gratis = gratis['Payout'].sum()
-                    lucro_gratis = total_apostado_gratis - total_payout_gratis
 
-                    st.markdown("**Rodadas gratuitas:**")
-                    st.write(f"Total de rodadas: {len(gratis)}")
-                    st.write(f"Total apostado: {formatar_brl(total_apostado_gratis)}")
-                    st.write(f"Total payout: {formatar_brl(total_payout_gratis)}")
-                    st.write(f"Lucro: {formatar_brl(lucro_gratis)}")
-                    st.write(f"Primeira rodada: {gratis['Creation Date'].min().strftime('%d/%m/%Y %H:%M')}")
-                    st.write(f"Última rodada: {gratis['Creation Date'].max().strftime('%d/%m/%Y %H:%M')}")
-                else:
-                    st.info("Sem rodadas gratuitas.")
+                # Função para exibir dados de um tipo de rodada
+                def exibir_rodadas(df_tipo, tipo_nome):
+                    if df_tipo.empty:
+                        st.info(f"Sem rodadas {tipo_nome.lower()}.")
+                        return pd.DataFrame()
+                    total_apostado = df_tipo['Bet'].sum()
+                    total_payout = df_tipo['Payout'].sum()
+                    lucro = total_apostado - total_payout
+                    st.markdown(f"**{tipo_nome}:**")
+                    st.write(f"Total de rodadas: {len(df_tipo)}")
+                    st.write(f"Total apostado: {formatar_brl(total_apostado)}")
+                    st.write(f"Total payout: {formatar_brl(total_payout)}")
+                    st.write(f"Lucro: {formatar_brl(lucro)}")
+                    st.write(f"Primeira rodada: {df_tipo['Creation Date'].min().strftime('%d/%m/%Y %H:%M')}")
+                    st.write(f"Última rodada: {df_tipo['Creation Date'].max().strftime('%d/%m/%Y %H:%M')}")
+                    st.divider()
+                    return pd.DataFrame({
+                        "Game Name": [jogo],
+                        "Tipo": [tipo_nome],
+                        "Rodadas": [len(df_tipo)],
+                        "Total Apostado": [total_apostado],
+                        "Total Payout": [total_payout],
+                        "Lucro": [lucro],
+                        "Primeira Rodada": [df_tipo['Creation Date'].min()],
+                        "Última Rodada": [df_tipo['Creation Date'].max()]
+                    })
 
-                # -----------------------------
-                # Resumo final por jogo (reais + gratuitas)
-                # -----------------------------
-                total_apostado = (reais['Bet'].sum() if not reais.empty else 0) + (gratis['Bet'].sum() if not gratis.empty else 0)
-                total_payout = (reais['Payout'].sum() if not reais.empty else 0) + (gratis['Payout'].sum() if not gratis.empty else 0)
-                lucro_total = total_apostado - total_payout
+                resumo_reais = exibir_rodadas(reais, "Rodadas reais")
+                resumo_gratis = exibir_rodadas(gratis, "Rodadas gratuitas")
 
-                st.markdown(f"**Resumo total do jogo (rodadas reais + gratuitas):**")
-                st.write(f"Lucro total: {formatar_brl(lucro_total)}")
-
+                # Resumo por jogo
+                total_apostado_jogo = (reais['Bet'].sum() if not reais.empty else 0) + (gratis['Bet'].sum() if not gratis.empty else 0)
+                total_payout_jogo = (reais['Payout'].sum() if not reais.empty else 0) + (gratis['Payout'].sum() if not gratis.empty else 0)
+                lucro_jogo = total_apostado_jogo - total_payout_jogo
+                st.markdown(f"**Resumo total do jogo:** Lucro total: {formatar_brl(lucro_jogo)}")
                 st.divider()
 
+                # Concatena resumo geral
+                resumo_geral.append(resumo_reais)
+                resumo_geral.append(resumo_gratis)
+
+            # -----------------------------
+            # Cria dataframe final para download
+            # -----------------------------
+            df_relatorio = pd.concat(resumo_geral, ignore_index=True)
+            if not df_relatorio.empty:
+                df_relatorio["Total Apostado"] = df_relatorio["Total Apostado"].apply(formatar_brl)
+                df_relatorio["Total Payout"] = df_relatorio["Total Payout"].apply(formatar_brl)
+                df_relatorio["Lucro"] = df_relatorio["Lucro"].apply(formatar_brl)
+                df_relatorio["Primeira Rodada"] = df_relatorio["Primeira Rodada"].dt.strftime("%d/%m/%Y %H:%M")
+                df_relatorio["Última Rodada"] = df_relatorio["Última Rodada"].dt.strftime("%d/%m/%Y %H:%M")
+
+                st.download_button(
+                    label="📥 Baixar relatório completo",
+                    data=df_relatorio.to_csv(index=False).encode("utf-8"),
+                    file_name="resumo_apostas.csv",
+                    mime="text/csv"
+                )
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
-
-
