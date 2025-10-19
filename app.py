@@ -2,15 +2,14 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="Calculadora de Cashback", page_icon="📊", layout="centered")
+st.set_page_config(page_title="Calculadora", page_icon="📊", layout="centered")
 
 st.title("📊 Calculadora de Cashback")
 
 st.markdown("""
 Procedimento:  
-1️⃣ A ferramenta filtra automaticamente apenas as rodadas com **Free Spin = false**  
-2️⃣ Somente apostas reais (sem rodadas grátis) entram no cálculo do cashback  
-3️⃣ Exporte o resultado como .CSV, se desejar
+1️⃣ Filtre no backoffice a data de ocorrencia de cashback 
+2️⃣ Exporte o resultado como .CSV  
 """)
 
 # -----------------------------
@@ -141,3 +140,4 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
