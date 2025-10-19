@@ -142,4 +142,66 @@ if uploaded_file:
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
 
+# -----------------------------
+# ABA 2 - RESUMO POR JOGO
+# -----------------------------
+with aba2:
+    st.subheader("🎮 Resumo por Jogo")
+
+    st.markdown("""
+    **Função:**  
+    Esta aba mostra o resumo das apostas realizadas **por jogo**, excluindo rodadas com Free Spin = true.
+    """)
+
+    uploaded_file2 = st.file_uploader("Envie o arquivo CSV para análise por jogo", type=["csv"], key="resumo")
+
+    if uploaded_file2:
+        try:
+            raw = uploaded_file2.read().decode("utf-8")
+            sep = ',' if raw.count(',') > raw.count(';') else ';'
+            df = pd.read_csv(io.StringIO(raw), sep=sep)
+
+            # Verifica colunas obrigatórias
+            obrigatorias = ["Game Name", "Bet", "Creation Date", "Free Spin"]
+            for col in obrigatorias:
+                if col not in df.columns:
+                    st.error(f"❌ Coluna obrigatória '{col}' não encontrada.")
+                    st.stop()
+
+            # Filtra apenas Free Spin = false
+            df = df[df["Free Spin"].astype(str).str.lower() == "false"]
+
+            if df.empty:
+                st.warning("⚠️ Nenhuma linha com Free Spin = false encontrada.")
+                st.stop()
+
+            # Converte Bet e Datas
+            df["Bet"] = df["Bet"].apply(converter_numero)
+            df["Creation Date"] = pd.to_datetime(df["Creation Date"], errors="coerce")
+
+            # Agrupa por jogo
+            resumo = (
+                df.groupby("Game Name")
+                .agg(
+                    Rodadas=("Game Name", "count"),
+                    TotalApostado=("Bet", "sum"),
+                    PrimeiraRodada=("Creation Date", "min"),
+                    UltimaRodada=("Creation Date", "max"),
+                )
+                .reset_index()
+            )
+
+            # Exibe resultados
+            for _, row in resumo.iterrows():
+                st.markdown(f"### 🎯 {row['Game Name']}")
+                st.write(f"**Total de rodadas:** {int(row['Rodadas'])}")
+                st.write(f"**Total apostado:** {formatar_brl(row['TotalApostado'])}")
+                st.write(f"**Primeira rodada:** {row['PrimeiraRodada'].strftime('%d/%m/%Y %H:%M')}")
+                st.write(f"**Última rodada:** {row['UltimaRodada'].strftime('%d/%m/%Y %H:%M')}")
+                st.divider()
+
+        except Exception as e:
+            st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
+
 
