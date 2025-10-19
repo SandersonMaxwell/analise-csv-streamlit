@@ -130,83 +130,79 @@ with aba1:
 # -----------------------------
 # ABA 2 - RESUMO POR JOGO
 # -----------------------------
-with aba2:
-    st.subheader("🎮 Resumo por Jogo")
+with abas[1]:
+    st.header("🎯 Análise de Apostas por Jogo")
 
-    st.markdown("""
-    **Função:**  
-    Esta aba mostra o resumo das apostas realizadas **por jogo**, excluindo rodadas com Free Spin = true.  
-    Também é possível filtrar a partir de uma **data e hora específica**.
-    """)
+    uploaded_file = st.file_uploader("Envie o arquivo CSV do jogador", type=["csv"], key="file_apostas")
 
-    uploaded_file2 = st.file_uploader("Envie o arquivo CSV para análise por jogo", type=["csv"], key="resumo")
-
-    if uploaded_file2:
+    if uploaded_file:
         try:
-            raw = uploaded_file2.read().decode("utf-8")
+            raw = uploaded_file.read().decode("utf-8")
             sep = ',' if raw.count(',') > raw.count(';') else ';'
             df = pd.read_csv(io.StringIO(raw), sep=sep)
 
-            # Verifica colunas obrigatórias
-            obrigatorias = ["Game Name", "Bet", "Creation Date", "Free Spin"]
-            for col in obrigatorias:
+            # Garante que as colunas necessárias existem
+            colunas_necessarias = ["Game Name", "Bet", "Creation Date", "Free Spin"]
+            for col in colunas_necessarias:
                 if col not in df.columns:
-                    st.error(f"❌ Coluna obrigatória '{col}' não encontrada.")
+                    st.error(f"❌ A coluna '{col}' não foi encontrada no CSV.")
                     st.stop()
 
-            # Converte Bet e Datas
-            df["Bet"] = df["Bet"].apply(converter_numero)
-            df["Creation Date"] = pd.to_datetime(df["Creation Date"], errors="coerce")
-
-            # Filtro Free Spin = false
+            # Filtra Free Spin = false
             df = df[df["Free Spin"].astype(str).str.lower() == "false"]
 
-            if df.empty:
-                st.warning("⚠️ Nenhuma linha com Free Spin = false encontrada.")
+            # Converte coluna de data
+            df["Creation Date"] = pd.to_datetime(df["Creation Date"], errors="coerce")
+
+            if df["Creation Date"].isna().all():
+                st.error("❌ Nenhuma data válida encontrada na coluna 'Creation Date'.")
                 st.stop()
 
-           # Filtro por data e hora inicial
-st.markdown("### 📅 Filtro por data e hora inicial")
-data_padrao = df["Creation Date"].min().date()
-hora_padrao = df["Creation Date"].min().time()
+            # Filtro por data e hora inicial
+            st.markdown("### 📅 Filtro por data e hora inicial")
+            data_padrao = df["Creation Date"].min().date()
+            hora_padrao = df["Creation Date"].min().time()
 
-# Exibe o seletor com label claro
-data_inicial = st.date_input("Selecione a data inicial (formato: dia/mês/ano):", value=data_padrao, format="DD/MM/YYYY")
-hora_inicial = st.time_input("Selecione o horário inicial:", value=hora_padrao)
+            data_inicial = st.date_input(
+                "Selecione a data inicial (formato: dia/mês/ano):",
+                value=data_padrao,
+                format="DD/MM/YYYY"
+            )
+            hora_inicial = st.time_input("Selecione o horário inicial:", value=hora_padrao)
 
-# Junta data e hora em um datetime completo
-filtro_inicial = pd.to_datetime(f"{data_inicial} {hora_inicial}")
+            filtro_inicial = pd.to_datetime(f"{data_inicial} {hora_inicial}")
 
-# Aplica filtro
-df = df[df["Creation Date"] >= filtro_inicial]
+            # Aplica filtro
+            df = df[df["Creation Date"] >= filtro_inicial]
 
-if df.empty:
-    st.warning("⚠️ Nenhuma aposta encontrada após a data/hora selecionada.")
-    st.stop()
+            if df.empty:
+                st.warning("⚠️ Nenhuma aposta encontrada após a data/hora selecionada.")
+                st.stop()
 
-# Agrupa por jogo
-resumo = (
-    df.groupby("Game Name")
-    .agg(
-        Rodadas=("Game Name", "count"),
-        TotalApostado=("Bet", "sum"),
-        PrimeiraRodada=("Creation Date", "min"),
-        UltimaRodada=("Creation Date", "max"),
-    )
-    .reset_index()
-)
+            # Agrupa por jogo
+            resumo = (
+                df.groupby("Game Name")
+                .agg(
+                    Rodadas=("Game Name", "count"),
+                    TotalApostado=("Bet", "sum"),
+                    PrimeiraRodada=("Creation Date", "min"),
+                    UltimaRodada=("Creation Date", "max"),
+                )
+                .reset_index()
+            )
 
-# Exibe resultados com datas formatadas em dd/mm/aaaa
-st.markdown(f"#### 🎯 Resultados a partir de {filtro_inicial.strftime('%d/%m/%Y %H:%M')}")
-for _, row in resumo.iterrows():
-    st.markdown(f"### 🎰 {row['Game Name']}")
-    st.write(f"**Total de rodadas:** {int(row['Rodadas'])}")
-    st.write(f"**Total apostado:** {formatar_brl(row['TotalApostado'])}")
-    st.write(f"**Primeira rodada:** {row['PrimeiraRodada'].strftime('%d/%m/%Y %H:%M')}")
-    st.write(f"**Última rodada:** {row['UltimaRodada'].strftime('%d/%m/%Y %H:%M')}")
-    st.divider()
+            # Exibe resultados
+            st.markdown(f"#### 🎯 Resultados a partir de {filtro_inicial.strftime('%d/%m/%Y %H:%M')}")
+            for _, row in resumo.iterrows():
+                st.markdown(f"### 🎰 {row['Game Name']}")
+                st.write(f"**Total de rodadas:** {int(row['Rodadas'])}")
+                st.write(f"**Total apostado:** {formatar_brl(row['TotalApostado'])}")
+                st.write(f"**Primeira rodada:** {row['PrimeiraRodada'].strftime('%d/%m/%Y %H:%M')}")
+                st.write(f"**Última rodada:** {row['UltimaRodada'].strftime('%d/%m/%Y %H:%M')}")
+                st.divider()
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
