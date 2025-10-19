@@ -8,8 +8,9 @@ st.title("📊 Calculadora de Cashback")
 
 st.markdown("""
 Procedimento:  
-1️⃣ Filtre no backoffice a data de ocorrencia de cashback 
+1️⃣ Filtre no backoffice a data de ocorrencia de cashback  
 2️⃣ Exporte o resultado como .CSV  
+
 """)
 
 # -----------------------------
@@ -140,4 +141,5 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
