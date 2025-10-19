@@ -69,14 +69,16 @@ with abas[0]:
                 st.stop()
 
             # Identificação automática das colunas
-            coluna_a = df.columns[0]
+            coluna_a = df.columns[0]  # rodadas (primeira coluna)
             coluna_b = next((c for c in df.columns if 'bet' in c.lower() or 'entrada' in c.lower()), None)
             coluna_c = next((c for c in df.columns if 'payout' in c.lower() or 'saida' in c.lower()), None)
-            if not coluna_b or not coluna_c:
-                st.error("❌ Não foi possível identificar as colunas de 'bet' e 'payout'.")
+            coluna_game = next((c for c in df.columns if 'game' in c.lower() or 'nome' in c.lower()), None)
+
+            if not coluna_b or not coluna_c or not coluna_game:
+                st.error("❌ Não foi possível identificar as colunas necessárias ('bet', 'payout', 'game').")
                 st.stop()
 
-            df = df.rename(columns={coluna_a: 'A', coluna_b: 'B', coluna_c: 'C'})
+            df = df.rename(columns={coluna_a: 'A', coluna_b: 'B', coluna_c: 'C', coluna_game: 'Game Name'})
             df['B'] = df['B'].apply(converter_numero)
             df['C'] = df['C'].apply(converter_numero)
 
