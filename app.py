@@ -69,7 +69,6 @@ with abas[0]:
                 st.stop()
 
             # Identificação automática das colunas
-            coluna_a = df.columns[0]  # rodadas (primeira coluna)
             coluna_b = next((c for c in df.columns if 'bet' in c.lower() or 'entrada' in c.lower()), None)
             coluna_c = next((c for c in df.columns if 'payout' in c.lower() or 'saida' in c.lower()), None)
             coluna_game = next((c for c in df.columns if 'game' in c.lower() or 'nome' in c.lower()), None)
@@ -78,21 +77,23 @@ with abas[0]:
                 st.error("❌ Não foi possível identificar as colunas necessárias ('bet', 'payout', 'game').")
                 st.stop()
 
-            df = df.rename(columns={coluna_a: 'A', coluna_b: 'B', coluna_c: 'C', coluna_game: 'Game Name'})
+            df = df.rename(columns={coluna_b: 'B', coluna_c: 'C', coluna_game: 'Game Name'})
             df['B'] = df['B'].apply(converter_numero)
             df['C'] = df['C'].apply(converter_numero)
 
-            # Rodadas reais
+            # Filtra rodadas reais
             if 'Free Spin' in df.columns:
                 df['Free Spin'] = df['Free Spin'].astype(str).str.lower()
-                df = df[df['Free Spin'] == 'false']
+                df_reais = df[df['Free Spin'] == 'false']
+            else:
+                df_reais = df.copy()
 
             # Cálculos principais
-            df['Diferença'] = df['B'] - df['C']
-            soma_b = df['B'].sum()
-            soma_c = df['C'].sum()
-            diferenca = df['Diferença'].sum()
-            qtd_rodadas = df['A'].count()
+            df_reais['Diferença'] = df_reais['B'] - df_reais['C']
+            soma_b = df_reais['B'].sum()
+            soma_c = df_reais['C'].sum()
+            diferenca = df_reais['Diferença'].sum()
+            qtd_rodadas = len(df_reais)  # Número de linhas
             percentual = calcular_percentual(qtd_rodadas)
             resultado_final = diferenca * percentual
 
@@ -118,13 +119,14 @@ with abas[0]:
             else:
                 st.success(f"✅ O jogador deve receber **{formatar_brl(resultado_final)}** em cashback!")
 
+            # Resumo por jogo
             st.divider()
             st.subheader("🎮 Resumo por Jogo (Rodadas Reais)")
-            jogos = df['Game Name'].unique()
+            jogos = df_reais['Game Name'].unique()
             resumo_jogos = []
 
             for jogo in jogos:
-                df_jogo = df[df['Game Name'] == jogo]
+                df_jogo = df_reais[df_reais['Game Name'] == jogo]
                 total_rodadas = len(df_jogo)
                 total_apostado = df_jogo['B'].sum()
                 total_payout = df_jogo['C'].sum()
@@ -163,11 +165,10 @@ with abas[0]:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
 
 # =====================================
-# ABA 2 – RESUMO DETALHADO POR JOGO SEM GRÁFICOS
+# ABA 2 – RESUMO DETALHADO POR JOGO
 # =====================================
 with abas[1]:
     st.subheader("🎮 Resumo Detalhado por Jogo")
-
     uploaded_file2 = st.file_uploader("Envie o CSV para análise detalhada", type=["csv"], key="aba2")
 
     if uploaded_file2:
