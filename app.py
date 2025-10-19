@@ -3,8 +3,7 @@ import pandas as pd
 import io
 
 st.set_page_config(page_title="Painel de Cashback e Apostas", page_icon="🎰", layout="centered")
-
-st.title("🎰 Calculadora")
+st.title("🎰 Painel de Cashback e Análise de Apostas")
 
 # -----------------------------
 # Funções auxiliares
@@ -39,21 +38,21 @@ def formatar_brl(valor):
     return f"R${valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
 # -----------------------------
-# Tabs
+# Cria abas
 # -----------------------------
-aba1, aba2 = st.tabs(["💰 Calculadora de Cashback", "🎮 Resumo por Jogo"])
+abas = st.tabs(["💰 Calculadora de Cashback", "🎮 Resumo por Jogo"])
 
 # -----------------------------
-# ABA 1 - CÁLCULO DE CASHBACK
+# ABA 1 - CALCULADORA DE CASHBACK
 # -----------------------------
-with aba1:
+with abas[0]:
     st.subheader("💰 Calculadora de Cashback")
 
     st.markdown("""
     **Procedimento:**  
-    1️⃣ Filtre a data de ocorrencia de cashback  
-    2️⃣ Exporte o resultado como .CSV  
-    
+    1️⃣ Filtra automaticamente apenas as rodadas com **Free Spin = false**  
+    2️⃣ Soma apostas e payouts, aplica percentual e calcula cashback  
+    3️⃣ Mostra se o jogador tem direito ao cashback
     """)
 
     uploaded_file = st.file_uploader("Envie o arquivo CSV", type=["csv"], key="cashback")
@@ -68,9 +67,6 @@ with aba1:
                 st.error("O CSV precisa ter pelo menos 3 colunas.")
                 st.stop()
 
-            # Identificação das colunas principais
-            colunas_lower = [c.lower() for c in df.columns]
-
             coluna_a = df.columns[0]
             coluna_b = next((c for c in df.columns if 'bet' in c.lower() or 'entrada' in c.lower()), None)
             coluna_c = next((c for c in df.columns if 'payout' in c.lower() or 'saida' in c.lower()), None)
@@ -80,16 +76,13 @@ with aba1:
                 st.error("❌ Não foi possível identificar as colunas de 'bet' e 'payout'.")
                 st.stop()
 
-            # Filtro Free Spin
             if coluna_free:
                 df = df[df[coluna_free].astype(str).str.lower() == 'false']
                 st.info(f"✅ Considerando apenas {len(df)} rodadas com Free Spin = false")
             else:
                 st.warning("⚠️ Coluna 'Free Spin' não encontrada. Nenhum filtro aplicado.")
 
-            # Renomeia
             df = df.rename(columns={coluna_a: 'A', coluna_b: 'B', coluna_c: 'C'})
-
             df['B'] = df['B'].apply(converter_numero)
             df['C'] = df['C'].apply(converter_numero)
 
@@ -101,7 +94,6 @@ with aba1:
             percentual = calcular_percentual(qtd_rodadas)
             resultado_final = diferenca * percentual
 
-            # Resultados
             st.subheader("📈 Resultados:")
             st.write(f"**Total apostado:** {formatar_brl(soma_b)}")
             st.write(f"**Payout:** {formatar_brl(soma_c)}")
@@ -110,7 +102,6 @@ with aba1:
             st.write(f"**Percentual aplicado:** {percentual * 100:.0f}%")
             st.write(f"**Valor a ser creditado:** {formatar_brl(resultado_final)}")
 
-            # Lógica de cashback
             if qtd_rodadas < 25 or percentual < 0.05 or resultado_final < 10:
                 st.warning("❌ O jogador **não tem direito a receber cashback**.")
                 motivos = []
@@ -131,55 +122,46 @@ with aba1:
 # ABA 2 - RESUMO POR JOGO
 # -----------------------------
 with abas[1]:
-    st.header("🎯 Análise de Apostas por Jogo")
+    st.subheader("🎮 Resumo por Jogo")
 
-    uploaded_file = st.file_uploader("Envie o arquivo CSV do jogador", type=["csv"], key="file_apostas")
+    uploaded_file2 = st.file_uploader("Envie o arquivo CSV para análise por jogo", type=["csv"], key="resumo")
 
-    if uploaded_file:
+    if uploaded_file2:
         try:
-            raw = uploaded_file.read().decode("utf-8")
+            raw = uploaded_file2.read().decode("utf-8")
             sep = ',' if raw.count(',') > raw.count(';') else ';'
             df = pd.read_csv(io.StringIO(raw), sep=sep)
 
-            # Garante que as colunas necessárias existem
-            colunas_necessarias = ["Game Name", "Bet", "Creation Date", "Free Spin"]
-            for col in colunas_necessarias:
+            obrigatorias = ["Game Name", "Bet", "Creation Date", "Free Spin"]
+            for col in obrigatorias:
                 if col not in df.columns:
-                    st.error(f"❌ A coluna '{col}' não foi encontrada no CSV.")
+                    st.error(f"❌ Coluna obrigatória '{col}' não encontrada.")
                     st.stop()
 
-            # Filtra Free Spin = false
+            df["Bet"] = df["Bet"].apply(converter_numero)
+            df["Creation Date"] = pd.to_datetime(df["Creation Date"], errors="coerce")
             df = df[df["Free Spin"].astype(str).str.lower() == "false"]
 
-            # Converte coluna de data
-            df["Creation Date"] = pd.to_datetime(df["Creation Date"], errors="coerce")
-
-            if df["Creation Date"].isna().all():
-                st.error("❌ Nenhuma data válida encontrada na coluna 'Creation Date'.")
+            if df.empty:
+                st.warning("⚠️ Nenhuma linha com Free Spin = false encontrada.")
                 st.stop()
 
-            # Filtro por data e hora inicial
             st.markdown("### 📅 Filtro por data e hora inicial")
             data_padrao = df["Creation Date"].min().date()
             hora_padrao = df["Creation Date"].min().time()
-
             data_inicial = st.date_input(
                 "Selecione a data inicial (formato: dia/mês/ano):",
                 value=data_padrao,
                 format="DD/MM/YYYY"
             )
             hora_inicial = st.time_input("Selecione o horário inicial:", value=hora_padrao)
-
             filtro_inicial = pd.to_datetime(f"{data_inicial} {hora_inicial}")
-
-            # Aplica filtro
             df = df[df["Creation Date"] >= filtro_inicial]
 
             if df.empty:
                 st.warning("⚠️ Nenhuma aposta encontrada após a data/hora selecionada.")
                 st.stop()
 
-            # Agrupa por jogo
             resumo = (
                 df.groupby("Game Name")
                 .agg(
@@ -191,7 +173,6 @@ with abas[1]:
                 .reset_index()
             )
 
-            # Exibe resultados
             st.markdown(f"#### 🎯 Resultados a partir de {filtro_inicial.strftime('%d/%m/%Y %H:%M')}")
             for _, row in resumo.iterrows():
                 st.markdown(f"### 🎰 {row['Game Name']}")
@@ -203,6 +184,3 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
-
-
