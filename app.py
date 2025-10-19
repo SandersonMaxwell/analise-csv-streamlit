@@ -50,9 +50,8 @@ with abas[0]:
 
     st.markdown("""
     **Procedimento:**  
-    1️⃣ Filtra automaticamente apenas as rodadas com **Free Spin = false**  
-    2️⃣ Soma apostas e payouts, aplica percentual e calcula cashback  
-    3️⃣ Mostra se o jogador tem direito ao cashback
+    1️⃣ Filtre a data de ocorrencia do cashback no BKO  
+    2️⃣ Exporte como .CSV 
     """)
 
     uploaded_file = st.file_uploader("Envie o arquivo CSV", type=["csv"], key="cashback")
@@ -224,5 +223,6 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
