@@ -129,7 +129,7 @@ with abas[0]:
             resumo_jogos = []
 
             for jogo in jogos:
-                df_jogo = df_reais[df_reais['Game Name'] == jogo]
+                df_jogo = df[df["Game Name"] == jogo]
                 total_rodadas = len(df_jogo)
                 total_apostado = df_jogo['B'].sum()
                 total_payout = df_jogo['C'].sum()
@@ -302,3 +302,4 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
