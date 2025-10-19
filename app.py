@@ -6,13 +6,13 @@ st.set_page_config(page_title="Calculadora de Cashback", page_icon="📊", layou
 
 st.title("📊 Calculadora de Cashback")
 
-
 st.markdown("""
 Procedimento:  
-1️⃣ Filtre a data da semana de cashback  
-2️⃣ Filtre a coluna FREE SPINS como FALSE  
-3️⃣ Exporte como .CSV 
+1️⃣ A ferramenta filtra automaticamente apenas as rodadas com **Free Spin = false**  
+2️⃣ Somente apostas reais (sem rodadas grátis) entram no cálculo do cashback  
+3️⃣ Exporte o resultado como .CSV, se desejar
 """)
+
 # -----------------------------
 # Funções auxiliares
 # -----------------------------
@@ -70,18 +70,29 @@ if uploaded_file:
             st.stop()
 
         # -----------------------------
-        # Identificação automática das colunas
+        # Identificação automática das colunas principais
         # -----------------------------
         colunas_lower = [c.lower() for c in df.columns]
 
-        coluna_a = df.columns[0]  # rodadas (primeira coluna)
+        coluna_a = df.columns[0]  # rodadas
         coluna_b = next((c for c in df.columns if 'bet' in c.lower() or 'entrada' in c.lower()), None)
         coluna_c = next((c for c in df.columns if 'payout' in c.lower() or 'saida' in c.lower()), None)
 
+        # Coluna fixa: "Free Spin"
+        coluna_free = next((c for c in df.columns if c.strip().lower() == 'free spin'), None)
+
         if not coluna_b or not coluna_c:
             st.error("❌ Não foi possível identificar as colunas de 'bet' e 'payout'. Verifique o cabeçalho do CSV.")
-            st.write("Dica: use nomes de colunas contendo 'bet' e 'payout' (qualquer variação de maiúsculas/minúsculas).")
             st.stop()
+
+        # -----------------------------
+        # Filtro: apenas Free Spin = false
+        # -----------------------------
+        if coluna_free:
+            df = df[df[coluna_free].astype(str).str.lower() == 'false']
+            st.info(f"✅ Considerando apenas {len(df)} rodadas com Free Spin = false")
+        else:
+            st.warning("⚠️ Coluna 'Free Spin' não encontrada. Nenhum filtro aplicado.")
 
         # Renomeia colunas principais
         df = df.rename(columns={coluna_a: 'A', coluna_b: 'B', coluna_c: 'C'})
@@ -108,10 +119,9 @@ if uploaded_file:
         st.write(f"**Total apostado:** {formatar_brl(soma_b)}")
         st.write(f"**Payout:** {formatar_brl(soma_c)}")
         st.write(f"**Perdas (BET - Payout):** {formatar_brl(diferenca)}")
-        st.write(f"**Número de rodadas:** {qtd_rodadas}")
+        st.write(f"**Número de rodadas válidas:** {qtd_rodadas}")
         st.write(f"**Percentual aplicado:** {percentual * 100:.0f}%")
         st.write(f"**Valor a ser creditado:** {formatar_brl(resultado_final)}")
-
 
         # -----------------------------
         # Lógica de cashback
@@ -129,7 +139,5 @@ if uploaded_file:
         else:
             st.success(f"✅ O jogador deve receber **{formatar_brl(resultado_final)}** em cashback!")
 
-
     except Exception as e:
         st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
