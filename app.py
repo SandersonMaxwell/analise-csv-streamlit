@@ -49,7 +49,7 @@ def formatar_brl(valor):
 # -----------------------------
 # Criação das abas
 # -----------------------------
-abas = st.tabs(["💸 Aba 1: Cashback", "📊 Aba 2: Aposta total"])
+abas = st.tabs(["💸Cashback", "🎰 Aposta total"])
 
 # =====================================
 # ABA 1 – CALCULADORA DE CASHBACK
@@ -253,4 +253,5 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
