@@ -136,7 +136,7 @@ with aba2:
     st.markdown("""
     **Função:**  
     Esta aba mostra o resumo das apostas realizadas **por jogo**, excluindo rodadas com Free Spin = true.  
-    Agora também é possível filtrar a partir de uma **data e hora específica**.
+    Também é possível filtrar a partir de uma **data e hora específica**.
     """)
 
     uploaded_file2 = st.file_uploader("Envie o arquivo CSV para análise por jogo", type=["csv"], key="resumo")
@@ -158,22 +158,26 @@ with aba2:
             df["Bet"] = df["Bet"].apply(converter_numero)
             df["Creation Date"] = pd.to_datetime(df["Creation Date"], errors="coerce")
 
-            # Filtro Free Spin
+            # Filtro Free Spin = false
             df = df[df["Free Spin"].astype(str).str.lower() == "false"]
 
             if df.empty:
                 st.warning("⚠️ Nenhuma linha com Free Spin = false encontrada.")
                 st.stop()
 
-            # Campo de filtro por data e hora
+            # Filtro por data e hora inicial
             st.markdown("### 📅 Filtro por data e hora inicial")
-            data_inicial = st.datetime_input(
-                "Selecione a partir de qual data e hora deseja considerar as apostas:",
-                value=df["Creation Date"].min()
-            )
+            data_padrao = df["Creation Date"].min().date()
+            hora_padrao = df["Creation Date"].min().time()
+
+            data_inicial = st.date_input("Selecione a data inicial:", value=data_padrao)
+            hora_inicial = st.time_input("Selecione o horário inicial:", value=hora_padrao)
+
+            # Junta data e hora em um datetime completo
+            filtro_inicial = pd.to_datetime(f"{data_inicial} {hora_inicial}")
 
             # Aplica filtro
-            df = df[df["Creation Date"] >= pd.to_datetime(data_inicial)]
+            df = df[df["Creation Date"] >= filtro_inicial]
 
             if df.empty:
                 st.warning("⚠️ Nenhuma aposta encontrada após a data/hora selecionada.")
@@ -192,7 +196,7 @@ with aba2:
             )
 
             # Exibe resultados
-            st.markdown(f"#### 🎯 Resultados a partir de {data_inicial.strftime('%d/%m/%Y %H:%M')}")
+            st.markdown(f"#### 🎯 Resultados a partir de {filtro_inicial.strftime('%d/%m/%Y %H:%M')}")
             for _, row in resumo.iterrows():
                 st.markdown(f"### 🎰 {row['Game Name']}")
                 st.write(f"**Total de rodadas:** {int(row['Rodadas'])}")
@@ -203,3 +207,4 @@ with aba2:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
