@@ -51,8 +51,8 @@ with aba1:
 
     st.markdown("""
     **Procedimento:**  
-    1️⃣ Filtre a data de ocorrencia de cashback
-    2️⃣ Exporte o resultado como .CSV
+    1️⃣ Filtre a data de ocorrencia de cashback  
+    2️⃣ Exporte o resultado como .CSV  
     
     """)
 
@@ -187,3 +187,4 @@ with aba2:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
