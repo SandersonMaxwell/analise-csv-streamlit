@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="Calculadora de Cashback e Relatórios", page_icon="📊", layout="wide")
-st.title("📊 Calculadora de Cashback e Relatórios")
+st.set_page_config(page_title="Calculadora", page_icon="📊", layout="wide")
+st.title("📊 Calculadora")
 
 # -----------------------------
 # Funções auxiliares
@@ -49,13 +49,13 @@ def formatar_brl(valor):
 # -----------------------------
 # Criação das abas
 # -----------------------------
-abas = st.tabs(["💸 Aba 1: Cashback", "📊 Aba 2: Resumo Detalhado"])
+abas = st.tabs(["💸 Aba 1: Cashback", "📊 Aba 2: Aposta total"])
 
 # =====================================
 # ABA 1 – CALCULADORA DE CASHBACK
 # =====================================
 with abas[0]:
-    st.markdown("### 📥 Envie o CSV para calcular cashback (rodadas reais apenas)")
+    st.markdown("### 📥 Envie o CSV para calcular cashback")
     uploaded_file = st.file_uploader("Envie o arquivo CSV", type=["csv"], key="aba1")
 
     if uploaded_file:
@@ -253,3 +253,4 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
