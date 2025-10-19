@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-import plotly.express as px
 
 st.set_page_config(page_title="Calculadora de Cashback e Relatórios", page_icon="📊", layout="wide")
 st.title("📊 Calculadora de Cashback e Relatórios")
@@ -70,7 +69,7 @@ with abas[0]:
                 st.stop()
 
             # Identificação automática das colunas
-            coluna_a = df.columns[0]  # rodadas (primeira coluna)
+            coluna_a = df.columns[0]
             coluna_b = next((c for c in df.columns if 'bet' in c.lower() or 'entrada' in c.lower()), None)
             coluna_c = next((c for c in df.columns if 'payout' in c.lower() or 'saida' in c.lower()), None)
             if not coluna_b or not coluna_c:
@@ -81,7 +80,7 @@ with abas[0]:
             df['B'] = df['B'].apply(converter_numero)
             df['C'] = df['C'].apply(converter_numero)
 
-            # Considera apenas rodadas reais (Free Spin = False)
+            # Rodadas reais
             if 'Free Spin' in df.columns:
                 df['Free Spin'] = df['Free Spin'].astype(str).str.lower()
                 df = df[df['Free Spin'] == 'false']
@@ -95,7 +94,7 @@ with abas[0]:
             percentual = calcular_percentual(qtd_rodadas)
             resultado_final = diferenca * percentual
 
-            # Exibe resultados gerais
+            # Resultados
             st.subheader("📈 Resultados do Cashback")
             st.write(f"💰 Total apostado: {formatar_brl(soma_b)}")
             st.write(f"🏆 Payout: {formatar_brl(soma_c)}")
@@ -118,18 +117,12 @@ with abas[0]:
                 st.success(f"✅ O jogador deve receber **{formatar_brl(resultado_final)}** em cashback!")
 
             st.divider()
-
-            # -----------------------------
-            # Resumo visual por jogo
-            # -----------------------------
             st.subheader("🎮 Resumo por Jogo (Rodadas Reais)")
-
-            df_reais = df.copy()
-            jogos = df_reais['Game Name'].unique()
+            jogos = df['Game Name'].unique()
             resumo_jogos = []
 
             for jogo in jogos:
-                df_jogo = df[df["Game Name"] == jogo]
+                df_jogo = df[df['Game Name'] == jogo]
                 total_rodadas = len(df_jogo)
                 total_apostado = df_jogo['B'].sum()
                 total_payout = df_jogo['C'].sum()
@@ -152,24 +145,11 @@ with abas[0]:
                     "Lucro": lucro
                 })
 
-            # Gráfico comparativo por jogo
-            df_plot = pd.DataFrame(resumo_jogos)
-            fig = px.bar(
-                df_plot,
-                x="Game Name",
-                y=["Total Apostado", "Valor Ganho", "Lucro"],
-                barmode="group",
-                title="💹 Comparativo por jogo",
-                labels={"value": "Valor (R$)", "variable": "Categoria"},
-                text_auto=True
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            # Download do resumo
             df_resumo_jogos = pd.DataFrame(resumo_jogos)
             df_resumo_jogos["Total Apostado"] = df_resumo_jogos["Total Apostado"].apply(formatar_brl)
             df_resumo_jogos["Valor Ganho"] = df_resumo_jogos["Valor Ganho"].apply(formatar_brl)
             df_resumo_jogos["Lucro"] = df_resumo_jogos["Lucro"].apply(formatar_brl)
+
             st.download_button(
                 label="📥 Baixar resumo por jogo",
                 data=df_resumo_jogos.to_csv(index=False).encode("utf-8"),
@@ -181,10 +161,10 @@ with abas[0]:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
 
 # =====================================
-# ABA 2 – RESUMO DETALHADO POR JOGO COM GRÁFICOS
+# ABA 2 – RESUMO DETALHADO POR JOGO SEM GRÁFICOS
 # =====================================
 with abas[1]:
-    st.subheader("🎮 Resumo Detalhado por Jogo com Gráficos")
+    st.subheader("🎮 Resumo Detalhado por Jogo")
 
     uploaded_file2 = st.file_uploader("Envie o CSV para análise detalhada", type=["csv"], key="aba2")
 
@@ -254,52 +234,19 @@ with abas[1]:
                 resumo_geral.append(calcular_resumo(reais, "Rodadas reais", "🎯"))
                 resumo_geral.append(calcular_resumo(gratis, "Rodadas gratuitas", "🎁"))
 
-            # Gráficos
             df_relatorio = pd.concat(resumo_geral, ignore_index=True)
-            if not df_relatorio.empty:
-                fig = px.bar(
-                    df_relatorio,
-                    x="Game Name",
-                    y=["Total Apostado", "Total Payout", "Lucro"],
-                    color="Tipo",
-                    barmode="group",
-                    title="💹 Comparativo por Jogo (Rodadas Reais vs Gratuitas)",
-                    text_auto=True,
-                    labels={"value": "Valor (R$)", "variable": "Categoria"}
-                )
-                st.plotly_chart(fig, use_container_width=True)
+            df_relatorio["Total Apostado"] = df_relatorio["Total Apostado"].apply(formatar_brl)
+            df_relatorio["Total Payout"] = df_relatorio["Total Payout"].apply(formatar_brl)
+            df_relatorio["Lucro"] = df_relatorio["Lucro"].apply(formatar_brl)
+            df_relatorio["Primeira Rodada"] = df_relatorio["Primeira Rodada"].dt.strftime("%d/%m/%Y %H:%M")
+            df_relatorio["Última Rodada"] = df_relatorio["Última Rodada"].dt.strftime("%d/%m/%Y %H:%M")
 
-                df_consolidado = df_relatorio.groupby("Game Name").agg({
-                    "Total Apostado": "sum",
-                    "Total Payout": "sum",
-                    "Lucro": "sum"
-                }).reset_index()
-
-                fig2 = px.bar(
-                    df_consolidado,
-                    x="Game Name",
-                    y=["Total Apostado", "Total Payout", "Lucro"],
-                    barmode="group",
-                    title="📊 Resumo Consolidado Geral por Jogo",
-                    text_auto=True,
-                    labels={"value": "Valor (R$)", "variable": "Categoria"}
-                )
-                st.plotly_chart(fig2, use_container_width=True)
-
-                # Preparar CSV para download
-                df_relatorio["Total Apostado"] = df_relatorio["Total Apostado"].apply(formatar_brl)
-                df_relatorio["Total Payout"] = df_relatorio["Total Payout"].apply(formatar_brl)
-                df_relatorio["Lucro"] = df_relatorio["Lucro"].apply(formatar_brl)
-                df_relatorio["Primeira Rodada"] = df_relatorio["Primeira Rodada"].dt.strftime("%d/%m/%Y %H:%M")
-                df_relatorio["Última Rodada"] = df_relatorio["Última Rodada"].dt.strftime("%d/%m/%Y %H:%M")
-
-                st.download_button(
-                    label="📥 Baixar relatório completo",
-                    data=df_relatorio.to_csv(index=False).encode("utf-8"),
-                    file_name="resumo_apostas_completo.csv",
-                    mime="text/csv"
-                )
+            st.download_button(
+                label="📥 Baixar relatório completo",
+                data=df_relatorio.to_csv(index=False).encode("utf-8"),
+                file_name="resumo_apostas_completo.csv",
+                mime="text/csv"
+            )
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
