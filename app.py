@@ -122,7 +122,7 @@ with abas[0]:
 # ABA 2 - RESUMO POR JOGO
 # -----------------------------
 with abas[1]:
-    st.subheader("🎮 Resumo por Jogo")
+    st.subheader("🎮 Resumo por Jogo Detalhado")
 
     uploaded_file2 = st.file_uploader("Envie o arquivo CSV para análise por jogo", type=["csv"], key="resumo")
 
@@ -138,23 +138,26 @@ with abas[1]:
                     st.error(f"❌ Coluna obrigatória '{col}' não encontrada.")
                     st.stop()
 
+            # Converte valores
             df["Bet"] = df["Bet"].apply(converter_numero)
             df["Creation Date"] = pd.to_datetime(df["Creation Date"], errors="coerce")
-            df = df[df["Free Spin"].astype(str).str.lower() == "false"]
 
-            if df.empty:
-                st.warning("⚠️ Nenhuma linha com Free Spin = false encontrada.")
+            if df.empty or df["Creation Date"].isna().all():
+                st.warning("⚠️ Nenhuma data válida encontrada.")
                 st.stop()
 
-            st.markdown("### 📅 Filtro por data e hora inicial")
+            # -----------------------------
+            # Filtro por data inicial
+            # -----------------------------
+            st.markdown("### 📅 Filtrar a partir de uma data e hora")
             data_padrao = df["Creation Date"].min().date()
             hora_padrao = df["Creation Date"].min().time()
+
             data_inicial = st.date_input(
-                "Selecione a data inicial (formato: dia/mês/ano):",
-                value=data_padrao,
-                format="DD/MM/YYYY"
+                "Data inicial (dd/mm/aaaa):", value=data_padrao, format="DD/MM/YYYY"
             )
-            hora_inicial = st.time_input("Selecione o horário inicial:", value=hora_padrao)
+            hora_inicial = st.time_input("Horário inicial (hh:mm):", value=hora_padrao)
+
             filtro_inicial = pd.to_datetime(f"{data_inicial} {hora_inicial}")
             df = df[df["Creation Date"] >= filtro_inicial]
 
@@ -162,25 +165,39 @@ with abas[1]:
                 st.warning("⚠️ Nenhuma aposta encontrada após a data/hora selecionada.")
                 st.stop()
 
-            resumo = (
-                df.groupby("Game Name")
-                .agg(
-                    Rodadas=("Game Name", "count"),
-                    TotalApostado=("Bet", "sum"),
-                    PrimeiraRodada=("Creation Date", "min"),
-                    UltimaRodada=("Creation Date", "max"),
-                )
-                .reset_index()
-            )
+            # -----------------------------
+            # Agrupa e exibe por jogo
+            # -----------------------------
+            jogos = df["Game Name"].unique()
 
-            st.markdown(f"#### 🎯 Resultados a partir de {filtro_inicial.strftime('%d/%m/%Y %H:%M')}")
-            for _, row in resumo.iterrows():
-                st.markdown(f"### 🎰 {row['Game Name']}")
-                st.write(f"**Total de rodadas:** {int(row['Rodadas'])}")
-                st.write(f"**Total apostado:** {formatar_brl(row['TotalApostado'])}")
-                st.write(f"**Primeira rodada:** {row['PrimeiraRodada'].strftime('%d/%m/%Y %H:%M')}")
-                st.write(f"**Última rodada:** {row['UltimaRodada'].strftime('%d/%m/%Y %H:%M')}")
+            for jogo in jogos:
+                st.markdown(f"### 🎰 {jogo}")
+                df_jogo = df[df["Game Name"] == jogo]
+
+                # Rodadas reais (Free Spin = false)
+                reais = df_jogo[df_jogo["Free Spin"].astype(str).str.lower() == "false"]
+                if not reais.empty:
+                    st.markdown("**Rodadas reais:**")
+                    st.write(f"Total de rodadas: {len(reais)}")
+                    st.write(f"Total apostado: {formatar_brl(reais['Bet'].sum())}")
+                    st.write(f"Primeira rodada: {reais['Creation Date'].min().strftime('%d/%m/%Y %H:%M')}")
+                    st.write(f"Última rodada: {reais['Creation Date'].max().strftime('%d/%m/%Y %H:%M')}")
+                else:
+                    st.info("Sem rodadas reais.")
+
+                # Rodadas gratuitas (Free Spin = true)
+                gratis = df_jogo[df_jogo["Free Spin"].astype(str).str.lower() == "true"]
+                if not gratis.empty:
+                    st.markdown("**Rodadas gratuitas:**")
+                    st.write(f"Total de rodadas: {len(gratis)}")
+                    st.write(f"Total apostado: {formatar_brl(gratis['Bet'].sum())}")
+                    st.write(f"Primeira rodada: {gratis['Creation Date'].min().strftime('%d/%m/%Y %H:%M')}")
+                    st.write(f"Última rodada: {gratis['Creation Date'].max().strftime('%d/%m/%Y %H:%M')}")
+                else:
+                    st.info("Sem rodadas gratuitas.")
+
                 st.divider()
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
