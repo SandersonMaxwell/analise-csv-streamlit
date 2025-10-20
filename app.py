@@ -137,7 +137,7 @@ with abas[0]:
                 col1, col2, col3 = st.columns(3)
                 col1.metric("📊 Total de rodadas", total_rodadas)
                 col2.metric("💰 Total apostado", formatar_brl(total_apostado))
-                col3.metric(f"{emoji_lucro} Lucro", formatar_brl(lucro))
+                col3.metric(f"{emoji_lucro} Lucro(pra casa)", formatar_brl(lucro))
                 st.write(f"🏆 Valor ganho (Payout): {formatar_brl(total_payout)}")
                 st.divider()
 
@@ -253,5 +253,6 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
