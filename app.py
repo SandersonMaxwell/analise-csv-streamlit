@@ -71,6 +71,15 @@ with abas[0]:
             sep = ',' if raw.count(',') > raw.count(';') else ';'
             df = pd.read_csv(io.StringIO(raw), sep=sep)
 
+            
+            # -----------------------------
+            # ID do jogador
+            # -----------------------------
+            if "Client ID" in df.columns:
+                player_id = df["Client ID"].iloc[0]
+                st.markdown(f"### 🆔 ID do Jogador: {player_id}")
+
+
             coluna_bet = next((c for c in df.columns if 'bet' in c.lower()), None)
             coluna_payout = next((c for c in df.columns if 'payout' in c.lower()), None)
             coluna_free = next((c for c in df.columns if 'free' in c.lower()), None)
@@ -239,4 +248,5 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
