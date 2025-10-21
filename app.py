@@ -256,7 +256,7 @@ with abas[1]:
             if 'lucro_total' not in st.session_state:
                 st.session_state['lucro_total'] = df[coluna_payout].sum() - df[coluna_bet].sum()
             
-            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(st.session_state['lucro_total'])}", unsafe_allow_html=True)
+            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(st.session_state['lucro_total'])}", unsafe_allow_html=False)
             
             total_reais = len(df[df['Free Spin'] == 'false'])
             total_gratis = len(df[df['Free Spin'] == 'true'])
@@ -269,6 +269,7 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
