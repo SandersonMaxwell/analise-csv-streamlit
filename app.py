@@ -255,9 +255,29 @@ with abas[1]:
             # -----------------------------
             lucro_total = df[coluna_payout].sum() - df[coluna_bet].sum()
             st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(lucro_total)}", unsafe_allow_html=True)
+            # -----------------------------
+            # CALCULAR LUCRO TOTAL DO JOGADOR
+            # -----------------------------
+            lucro_total = df[coluna_payout].sum() - df[coluna_bet].sum()
+            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(lucro_total)}", unsafe_allow_html=True)
+
+            # -----------------------------
+            # ESTIMAR BANCA DO JOGADOR
+            # -----------------------------
+            valor_adicional = st.number_input(
+                "💵 Insira um valor em R$ para somar ao lucro total (ex: banca inicial):",
+                min_value=0.0,
+                value=0.0,
+                step=10.0,
+                format="%.2f"
+            )
             
+            banca_estimada = lucro_total + valor_adicional
+            st.markdown(f"### 🏦 Banca estimada do jogador: {formatar_brl(banca_estimada)}", unsafe_allow_html=True)
+
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
