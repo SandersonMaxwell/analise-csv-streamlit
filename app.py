@@ -233,22 +233,8 @@ with abas[1]:
                 st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
                 st.markdown("---")
 
-                linhas_relatorio.append({
-                    "Jogo": jogo,
-                    "Total Apostado": total_jogo_apostado,
-                    "Total Pago": total_jogo_payout,
-                    "Lucro do Jogador": lucro_jogo
-                })
-
-            df_relatorio = pd.DataFrame(linhas_relatorio)
-            relatorio_csv = gerar_relatorio_csv(df_relatorio)
-
-            st.download_button(
-                label="📥 Baixar Relatório Completo",
-                data=relatorio_csv,
-                file_name="relatorio_jogos.csv",
-                mime="text/csv"
             )
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
