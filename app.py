@@ -156,86 +156,103 @@ with abas[0]:
 # ABA 2 - RESUMO DETALHADO
 # =============================
 with abas[1]:
-    st.header("🎯 Resumo Detalhado por Jogo")
+    st.header("📊 Resumo Detalhado por Jogo")
 
-    uploaded_file2 = st.file_uploader("Envie o arquivo CSV do jogador", type=["csv"], key="detalhado")
+    arquivo2 = st.file_uploader("Envie o arquivo .xlsx", type=["xlsx"], key="file2")
 
-    if uploaded_file2:
+    if arquivo2:
         try:
-            raw = uploaded_file2.read().decode("utf-8")
-            sep = ',' if raw.count(',') > raw.count(';') else ';'
-            df = pd.read_csv(io.StringIO(raw), sep=sep)
+            df = pd.read_excel(arquivo2)
+            df.columns = [col.strip() for col in df.columns]
 
-            # localizar colunas
-            coluna_jogo = next((c for c in df.columns if 'game' in c.lower() or 'nome' in c.lower()), None)
-            coluna_bet = next((c for c in df.columns if 'bet' in c.lower()), None)
-            coluna_payout = next((c for c in df.columns if 'payout' in c.lower()), None)
-            coluna_data = next((c for c in df.columns if 'creation' in c.lower() or 'date' in c.lower()), None)
-            coluna_free = next((c for c in df.columns if 'free' in c.lower()), None)
+            data_col = df.columns[1]
+            free_col = "Free Spin"
+            bet_col = "Bet"
+            payout_col = "Payout"
+            game_col = "Game Name"
 
-            if not all([coluna_jogo, coluna_bet, coluna_payout, coluna_data]):
-                st.error("❌ O CSV precisa conter as colunas 'Game Name', 'Bet', 'Payout' e 'Creation Date'.")
+            df[data_col] = pd.to_datetime(df[data_col], errors="coerce")
+
+            # 🔹 Filtros de data/hora com entrada livre
+            st.subheader("⏰ Filtro por Data e Hora")
+
+            data_inicio = st.date_input("Data inicial")
+            hora_inicio_txt = st.text_input("Hora inicial (HH:MM)", "00:00")
+
+            data_fim = st.date_input("Data final")
+            hora_fim_txt = st.text_input("Hora final (HH:MM)", "23:59")
+
+            try:
+                hora_inicio = datetime.strptime(hora_inicio_txt, "%H:%M").time()
+                hora_fim = datetime.strptime(hora_fim_txt, "%H:%M").time()
+                data_hora_inicio = datetime.combine(data_inicio, hora_inicio)
+                data_hora_fim = datetime.combine(data_fim, hora_fim)
+            except ValueError:
+                st.error("❌ Formato de hora inválido! Use HH:MM (ex: 14:30).")
                 st.stop()
 
-            # conversões
-            df[coluna_bet] = df[coluna_bet].apply(converter_numero)
-            df[coluna_payout] = df[coluna_payout].apply(converter_numero)
-            df[coluna_data] = pd.to_datetime(df[coluna_data], errors='coerce')
+            df = df[(df[data_col] >= data_hora_inicio) & (df[data_col] <= data_hora_fim)]
 
-            if coluna_free:
-                df['Free Spin'] = df[coluna_free].astype(str).str.lower()
-            else:
-                df['Free Spin'] = 'false'
+            st.markdown("---")
+            st.subheader("🎯 Resultado por Jogo")
 
-            # -----------------------------
-            # FILTROS DE DATA E HORA (inicial + final)
-            # -----------------------------
-            st.markdown("### 📅 Filtro por Data e Hora (intervalo)")
-
-            data_min = df[coluna_data].min()
-            data_max = df[coluna_data].max()
-
-            col1, col2 = st.columns(2)
-            with col1:
-                data_inicio = st.date_input("📆 Data inicial", value=data_min.date(), min_value=data_min.date(), max_value=data_max.date())
-                hora_inicio = st.time_input("🕓 Hora inicial", value=data_min.time())
-            with col2:
-                data_fim = st.date_input("📆 Data final", value=data_max.date(), min_value=data_min.date(), max_value=data_max.date())
-                hora_fim = st.time_input("🕕 Hora final", value=data_max.time())
-
-            dt_inicio = datetime.combine(data_inicio, hora_inicio)
-            dt_fim = datetime.combine(data_fim, hora_fim)
-
-            # aplica filtro por intervalo
-            df = df[(df[coluna_data] >= dt_inicio) & (df[coluna_data] <= dt_fim)]
-
-            # EXIBIÇÃO DOS RESULTADOS
-            jogos = df[coluna_jogo].unique()
+            jogos = df[game_col].unique()
+            linhas_relatorio = []
 
             for jogo in jogos:
-                st.markdown(f"### 🎮 {jogo}")
+                df_jogo = df[df[game_col] == jogo]
+                df_reais = df_jogo[df_jogo[free_col].astype(str).str.lower() == "false"]
+                df_free = df_jogo[df_jogo[free_col].astype(str).str.lower() == "true"]
 
-                for status in ['false', 'true']:
-                    tipo = "Rodadas Reais" if status == 'false' else "Rodadas Gratuitas"
-                    subset = df[(df[coluna_jogo] == jogo) & (df['Free Spin'] == status)]
+                def resumo_tipo(df_tipo, tipo):
+                    if df_tipo.empty:
+                        return f"**Rodadas {tipo}:** Nenhuma rodada encontrada\n"
 
-                    if not subset.empty:
-                        total_rodadas = len(subset)
-                        total_apostado = subset[coluna_bet].sum()
-                        total_payout = subset[coluna_payout].sum()
-                        lucro = total_payout - total_apostado
+                    total_rodadas = len(df_tipo)
+                    total_apostado = df_tipo[bet_col].sum()
+                    total_payout = df_tipo[payout_col].sum()
+                    lucro_jogador = total_payout - total_apostado
+                    primeira = df_tipo[data_col].min()
+                    ultima = df_tipo[data_col].max()
 
-                        primeira_data = subset[coluna_data].min().strftime("%d/%m/%Y %H:%M")
-                        ultima_data = subset[coluna_data].max().strftime("%d/%m/%Y %H:%M")
+                    return (
+                        f"**Rodadas {tipo}:**\n"
+                        f"- Total de rodadas: {total_rodadas}\n"
+                        f"- Total apostado: {format_brl(total_apostado)}\n"
+                        f"- Total payout: {format_brl(total_payout)}\n"
+                        f"- Lucro do jogador: {lucro_colorido(lucro_jogador)}\n"
+                        f"- Primeira rodada: {primeira.strftime('%d/%m/%Y %H:%M')}\n"
+                        f"- Última rodada: {ultima.strftime('%d/%m/%Y %H:%M')}\n"
+                    )
 
-                        st.markdown(f"#### 🎯 {tipo}")
-                        st.write(f"**Total de rodadas:** {total_rodadas}")
-                        st.write(f"**Total apostado:** {formatar_brl(total_apostado)}")
-                        st.write(f"**Total ganho (payout):** {formatar_brl(total_payout)}")
-                        st.markdown(mostrar_lucro(lucro), unsafe_allow_html=True)
-                        st.write(f"**Primeira rodada:** {primeira_data}")
-                        st.write(f"**Última rodada:** {ultima_data}")
-                        st.divider()
+                st.markdown(f"### 🎰 {jogo}")
+                st.markdown(resumo_tipo(df_reais, "reais"))
+                st.markdown(resumo_tipo(df_free, "gratuitas"))
+
+                # Resumo geral
+                total_jogo_apostado = df_jogo[bet_col].sum()
+                total_jogo_payout = df_jogo[payout_col].sum()
+                lucro_jogo = total_jogo_payout - total_jogo_apostado
+
+                st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
+                st.markdown("---")
+
+                linhas_relatorio.append({
+                    "Jogo": jogo,
+                    "Total Apostado": total_jogo_apostado,
+                    "Total Pago": total_jogo_payout,
+                    "Lucro do Jogador": lucro_jogo
+                })
+
+            df_relatorio = pd.DataFrame(linhas_relatorio)
+            relatorio_bytes = gerar_relatorio(df_relatorio)
+
+            st.download_button(
+                label="📥 Baixar Relatório Completo",
+                data=relatorio_bytes,
+                file_name="relatorio_jogos.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
