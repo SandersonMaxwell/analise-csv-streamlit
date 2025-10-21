@@ -233,8 +233,8 @@ with abas[1]:
                 st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
                 st.markdown("---")
 
-            )
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
