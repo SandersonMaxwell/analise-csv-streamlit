@@ -278,11 +278,7 @@ with abas[1]:
 
             relatorio_csv = gerar_relatorio_csv(df_relatorio)
 
-            st.download_button(
-                label="📥 Baixar Relatório Completo",
-                data=relatorio_csv,
-                file_name="relatorio_jogos.csv",
-                mime="text/csv"
+    
             )
 
             # -----------------------------
@@ -303,3 +299,4 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
