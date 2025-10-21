@@ -1,13 +1,19 @@
 import streamlit as st
 import pandas as pd
 import io
+from datetime import datetime
 
-st.set_page_config(page_title="Calculadora", page_icon="📊", layout="wide")
-st.title("📊 Calculadora")
+# =============================
+# CONFIGURAÇÕES INICIAIS
+# =============================
+st.set_page_config(page_title="Calculadora💸", page_icon="💰", layout="wide")
+st.title("💸 Calculadora de Cashback e Análise de Jogadas")
 
-# -----------------------------
-# Funções auxiliares
-# -----------------------------
+abas = st.tabs(["📊 Cashback", "🎯 Analise Cassino"])
+
+# =============================
+# FUNÇÕES AUXILIARES
+# =============================
 def calcular_percentual(qtd_rodadas):
     regras = [
         (25, 59, 0.05),
@@ -29,6 +35,7 @@ def calcular_percentual(qtd_rodadas):
         if min_r <= qtd_rodadas <= max_r:
             return perc
     return 0
+
 def converter_numero(valor):
     if pd.isna(valor):
         return 0
@@ -227,4 +234,3 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
