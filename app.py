@@ -262,7 +262,7 @@ with abas[1]:
             # DataFrame final para download
             # -----------------------------
             df_relatorio = pd.DataFrame(linhas_relatorio)
-            relatorio_csv = gerar_relatorio_csv(df_relatorio)
+            
 
 
 
@@ -284,3 +284,4 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
