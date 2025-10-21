@@ -164,9 +164,7 @@ with abas[0]:
 # =============================
 # ABA 2 - RESUMO DETALHADO
 # =============================
-# =============================
-# ABA 2 - RESUMO DETALHADO
-# =============================
+
 with abas[1]:
     st.header("🎯 Resumo Detalhado por Jogo")
 
@@ -224,30 +222,6 @@ with abas[1]:
 
             # aplica filtro
             df = df[(df[coluna_data] >= dt_inicio) & (df[coluna_data] <= dt_fim)]
-
-            # -----------------------------
-            # CALCULAR LUCRO TOTAL DO JOGADOR
-            # -----------------------------
-            lucro_total = df[coluna_payout].sum() - df[coluna_bet].sum()
-            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(lucro_total)}", unsafe_allow_html=True)
-
-            # -----------------------------
-            # INSERIR VALOR ADICIONAL PARA BANCA
-            # -----------------------------
-            valor_adicional = st.number_input(
-                "💵 Insira um valor em R$ para somar ao lucro total (ex: banca inicial):",
-                min_value=0.0,
-                value=0.0,
-                step=10.0,
-                format="%.2f"
-            )
-
-            # calcula banca estimada sem interferir no lucro original
-            banca_estimada = lucro_total + valor_adicional
-            st.markdown(f"### 🏦 Banca estimada do jogador: {formatar_brl(banca_estimada)}", unsafe_allow_html=True)
-
-            st.divider()
-
             # -----------------------------
             # EXIBIÇÃO POR JOGO
             # -----------------------------
@@ -277,7 +251,11 @@ with abas[1]:
                         st.write(f"**Primeira rodada:** {primeira_data}")
                         st.write(f"**Última rodada:** {ultima_data}")
                         st.divider()
-
+            # -----------------------------
+            # CALCULAR LUCRO TOTAL DO JOGADOR
+            # -----------------------------
+            lucro_total = df[coluna_payout].sum() - df[coluna_bet].sum()
+            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(lucro_total)}", unsafe_allow_html=True)
             # -----------------------------
             # TOTAL DE RODADAS REAIS E GRÁTIS
             # -----------------------------
@@ -292,6 +270,7 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
