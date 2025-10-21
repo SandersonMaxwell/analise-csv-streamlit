@@ -158,11 +158,11 @@ with abas[0]:
 with abas[1]:
     st.header("📊 Resumo Detalhado por Jogo")
 
-    arquivo2 = st.file_uploader("Envie o arquivo .xlsx", type=["xlsx"], key="file2")
+    arquivo2 = st.file_uploader("Envie o arquivo .csv", type=["csv"], key="file2")
 
     if arquivo2:
         try:
-            df = pd.read_excel(arquivo2)
+            df = pd.read_csv(arquivo2)
             df.columns = [col.strip() for col in df.columns]
 
             data_col = df.columns[1]
@@ -256,3 +256,4 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
