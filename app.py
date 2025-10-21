@@ -200,8 +200,8 @@ with abas[1]:
                 data_inicio = st.date_input("📆 Data inicial", value=data_min.date(), min_value=data_min.date(), max_value=data_max.date())
                 hora_inicio = st.time_input("🕓 Hora inicial", value=data_min.time())
             with col2:
-                data_fim = st.date_input("📆 Data final", value=data_max.date(), min_value=data_min.date(), max_value=data_max.date())
-                hora_fim = st.time_input("🕕 Hora final", value=data_max.time())
+                data_fim = st.date_input("📆 Data final(vem automatico da ultima aposta)", value=data_max.date(), min_value=data_min.date(), max_value=data_max.date())
+                hora_fim = st.time_input("🕕 Hora final(vem automatico da ultima aposta)", value=data_max.time())
 
             dt_inicio = datetime.combine(data_inicio, hora_inicio)
             dt_fim = datetime.combine(data_fim, hora_fim)
@@ -239,3 +239,4 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
