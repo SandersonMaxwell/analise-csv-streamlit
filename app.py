@@ -279,7 +279,7 @@ with abas[1]:
             relatorio_csv = gerar_relatorio_csv(df_relatorio)
 
     
-            )
+            
 
             # -----------------------------
             # Análise com Net Deposit
@@ -299,4 +299,5 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
