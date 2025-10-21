@@ -245,15 +245,16 @@ with abas[1]:
                 })
 
             df_relatorio = pd.DataFrame(linhas_relatorio)
-            relatorio_bytes = gerar_relatorio(df_relatorio)
+            relatorio_bytes = gerar_relatorio_csv(df_relatorio)
 
             st.download_button(
                 label="📥 Baixar Relatório Completo",
                 data=relatorio_bytes,
-                file_name="relatorio_jogos.xlsx",
+                file_name="relatorio_jogos.csv",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
