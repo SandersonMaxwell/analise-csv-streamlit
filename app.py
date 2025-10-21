@@ -171,7 +171,7 @@ with abas[1]:
     if arquivo2:
         try:
             df = pd.read_csv(arquivo2)
-            df.columns = [col.strip() for col in df.columns]
+            df.columns = [c.strip() for c in df.columns]
 
             # -----------------------------
             # ID do jogador
@@ -218,6 +218,13 @@ with abas[1]:
             linhas_relatorio = []
             jogos = df[game_col].unique()
 
+            # Função para lucro colorido
+            def lucro_colorido(valor):
+                if valor >= 0:
+                    return f"<span style='color:green;'>R${valor:,.2f}</span>"
+                else:
+                    return f"<span style='color:red;'>R${valor:,.2f}</span>"
+
             for jogo in jogos:
                 df_jogo = df[df[game_col] == jogo]
                 df_reais = df_jogo[df_jogo[free_col].astype(str).str.lower() == "false"]
@@ -234,21 +241,21 @@ with abas[1]:
                     ultima = df_tipo[data_col].max()
                     return f"**Rodadas {tipo}:**\n" \
                            f"- Total de rodadas: {total_rodadas}\n" \
-                           f"- Total apostado: {format_brl(total_apostado)}\n" \
-                           f"- Total payout: {format_brl(total_payout)}\n" \
+                           f"- Total apostado: {formatar_brl(total_apostado)}\n" \
+                           f"- Total payout: {formatar_brl(total_payout)}\n" \
                            f"- Lucro do jogador: {lucro_colorido(lucro_jogador)}\n" \
                            f"- Primeira rodada: {primeira.strftime('%d/%m/%Y %H:%M')}\n" \
                            f"- Última rodada: {ultima.strftime('%d/%m/%Y %H:%M')}\n"
 
                 st.markdown(f"### 🎰 {jogo}")
-                st.markdown(resumo_tipo(df_reais, "reais"))
-                st.markdown(resumo_tipo(df_free, "gratuitas"))
+                st.markdown(resumo_tipo(df_reais, "reais"), unsafe_allow_html=True)
+                st.markdown(resumo_tipo(df_free, "gratuitas"), unsafe_allow_html=True)
 
                 # Resumo geral por jogo
                 total_jogo_apostado = df_jogo[bet_col].sum()
                 total_jogo_payout = df_jogo[payout_col].sum()
                 lucro_jogo = total_jogo_payout - total_jogo_apostado
-                st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
+                st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}", unsafe_allow_html=True)
                 st.markdown("---")
 
                 linhas_relatorio.append({
@@ -262,9 +269,21 @@ with abas[1]:
             # DataFrame final para download
             # -----------------------------
             df_relatorio = pd.DataFrame(linhas_relatorio)
-            
+            if "Lucro do Jogador" not in df_relatorio.columns:
+                df_relatorio["Lucro do Jogador"] = 0
 
+            # Função para gerar CSV
+            def gerar_relatorio_csv(df_rel):
+                return df_rel.to_csv(index=False).encode("utf-8")
 
+            relatorio_csv = gerar_relatorio_csv(df_relatorio)
+
+            st.download_button(
+                label="📥 Baixar Relatório Completo",
+                data=relatorio_csv,
+                file_name="relatorio_jogos.csv",
+                mime="text/csv"
+            )
 
             # -----------------------------
             # Análise com Net Deposit
@@ -280,8 +299,7 @@ with abas[1]:
 
             net_deposit = parse_brl(net_deposit_input)
             banca_total = net_deposit + df_relatorio["Lucro do Jogador"].sum()
-            st.markdown(f"**Banca estimada do jogador considerando Net Deposit e resultados:** {format_brl(banca_total)}")
+            st.markdown(f"**Banca estimada do jogador considerando Net Deposit e resultados:** {formatar_brl(banca_total)}")
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
