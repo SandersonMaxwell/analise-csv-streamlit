@@ -1,26 +1,16 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
+import io
 from datetime import datetime
 
-st.set_page_config(page_title="Calculadora 🧮", layout="wide")
-st.title("🎰Calculadroa de Cashback e analise de apostas em cassino")
+st.set_page_config(page_title="Calculadora", page_icon="🧮", layout="wide")
+st.title("💸 Calculadora de Cashback e Análise de Jogadas de Cassino")
 
-# -----------------------------
-# Funções auxiliares
-# -----------------------------
-def format_brl(value):
-    return f"R${value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+abas = st.tabs(["📊 Cashback", "🎯 Analise Cassino"])
 
-def lucro_colorido(lucro):
-    color = "green" if lucro >= 0 else "red"
-    return f"<span style='color:{color}; font-weight:bold'>{format_brl(lucro)}</span>"
-
-def gerar_relatorio_csv(df):
-    output = StringIO()
-    df.to_csv(output, index=False, sep=';')
-    return output.getvalue()
-
+# =============================
+# FUNÇÕES AUXILIARES
+# =============================
 def calcular_percentual(qtd_rodadas):
     regras = [
         (25, 59, 0.05),
@@ -56,94 +46,108 @@ def converter_numero(valor):
     except:
         return 0
 
-# =============================
-# ABAS
-# =============================
-abas = st.tabs(["💰Cashback", "📊 Apostas Cassino"])
+def formatar_brl(valor):
+    return f"R${valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+def mostrar_lucro(lucro):
+    if lucro > 0:
+        return f"💰 <span style='color:green;'>Lucro do jogador: {formatar_brl(lucro)}</span>"
+    elif lucro < 0:
+        return f"💸 <span style='color:red;'>Prejuízo do jogador: {formatar_brl(lucro)}</span>"
+    else:
+        return f"⚖️ <span style='color:gray;'>Sem lucro ou prejuízo</span>"
 
 # =============================
 # ABA 1 - CASHBACK
 # =============================
 with abas[0]:
-    st.header("💰 Cálculo de Cashback")
-    arquivo = st.file_uploader("Envie o arquivo .csv", type=["csv"], key="aba1")
+    st.header("📊 Cálculo de Cashback")
 
-    if arquivo:
+    uploaded_file = st.file_uploader("Envie o arquivo CSV do jogador", type=["csv"], key="aba1")
+
+    if uploaded_file:
         try:
-            df = pd.read_csv(arquivo)
-            df.columns = [col.strip() for col in df.columns]
+            raw = uploaded_file.read().decode("utf-8")
+            sep = ',' if raw.count(',') > raw.count(';') else ';'
+            df = pd.read_csv(io.StringIO(raw), sep=sep)
 
-            # -----------------------------
-            # ID do jogador
-            # -----------------------------
-            if "Client ID" in df.columns:
-                player_id = df["Client ID"].iloc[0]
-                st.markdown(f"### 🆔 ID do Jogador: {player_id}")
+            coluna_bet = next((c for c in df.columns if 'bet' in c.lower()), None)
+            coluna_payout = next((c for c in df.columns if 'payout' in c.lower()), None)
+            coluna_free = next((c for c in df.columns if 'free' in c.lower()), None)
+            coluna_jogo = next((c for c in df.columns if 'game' in c.lower() or 'nome' in c.lower()), None)
 
-            # Colunas principais
-            data_col = df.columns[1]
-            free_col = "Free Spin"
-            bet_col = "Bet"
-            payout_col = "Payout"
-            game_col = "Game Name"
+            if not coluna_bet or not coluna_payout:
+                st.error("❌ Não foi possível identificar as colunas 'Bet' e 'Payout'. Verifique o CSV.")
+                st.stop()
 
-            # Converte valores
-            df[bet_col] = df[bet_col].apply(converter_numero)
-            df[payout_col] = df[payout_col].apply(converter_numero)
+            df[coluna_bet] = df[coluna_bet].apply(converter_numero)
+            df[coluna_payout] = df[coluna_payout].apply(converter_numero)
 
-            # Filtra apenas rodadas reais
-            df_reais = df[df[free_col].astype(str).str.lower() == "false"]
-            df_reais[data_col] = pd.to_datetime(df_reais[data_col], errors="coerce")
+            if coluna_free:
+                df['Free Spin'] = df[coluna_free].astype(str).str.lower()
+                df_reais = df[df['Free Spin'] == 'false']
+            else:
+                df_reais = df.copy()
 
-            # Cálculo cashback (visão da casa)
-            total_bet = df_reais[bet_col].sum()
-            total_payout = df_reais[payout_col].sum()
-            diferenca = total_bet - total_payout
+            # ⚠️ CÁLCULO DO CASHBACK (visão da casa)
+            soma_b = df_reais[coluna_bet].sum()
+            soma_c = df_reais[coluna_payout].sum()
+            diferenca = soma_b - soma_c  # apostado - payout
             qtd_rodadas = len(df_reais)
             percentual = calcular_percentual(qtd_rodadas)
             resultado_final = diferenca * percentual
 
+            # EXIBIÇÃO
             st.subheader("📈 Resultados Gerais")
-            st.markdown(f"**Total Apostado:** {format_brl(total_bet)}")
-            st.markdown(f"**Total Pago:** {format_brl(total_payout)}")
-            st.markdown(f"**Cashback (visão da casa):** {lucro_colorido(diferenca)}")
-            st.markdown(f"**Número de rodadas:** {qtd_rodadas}")
-            st.markdown(f"**Percentual aplicado:** {percentual*100:.0f}%")
-            st.markdown(f"**Valor de cashback:** {format_brl(resultado_final)}")
+            st.write(f"**Total apostado:** {formatar_brl(soma_b)}")
+            st.write(f"**Total ganho (payout):** {formatar_brl(soma_c)}")
 
-            # Elegibilidade cashback
+            # mostra lucro para a casa (sem inverter aqui)
+            if diferenca > 0:
+                st.markdown(f"🏦 <span style='color:green;'>Lucro da casa: {formatar_brl(diferenca)}</span>", unsafe_allow_html=True)
+            elif diferenca < 0:
+                st.markdown(f"💸 <span style='color:red;'>Prejuízo da casa: {formatar_brl(diferenca)}</span>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"⚖️ <span style='color:gray;'>Sem lucro ou prejuízo</span>", unsafe_allow_html=True)
+
+            st.write(f"**Número de rodadas:** {qtd_rodadas}")
+            st.write(f"**Percentual aplicado:** {percentual * 100:.0f}%")
+            st.write(f"**Valor de cashback:** {formatar_brl(resultado_final)}")
+
+            # REGRAS DE ELEGIBILIDADE
             if qtd_rodadas < 25 or percentual < 0.05 or resultado_final < 10 or diferenca <= 0:
-                st.warning("❌ O jogador não tem direito a receber cashback.")
+                st.warning("❌ O jogador **não tem direito a receber cashback**.")
                 motivos = []
                 if qtd_rodadas < 25:
                     motivos.append(f"rodadas insuficientes ({qtd_rodadas})")
                 if percentual < 0.05:
-                    motivos.append(f"percentual menor que 5% ({percentual*100:.0f}%)")
+                    motivos.append(f"percentual aplicado menor que 5% ({percentual*100:.0f}%)")
                 if resultado_final < 10:
-                    motivos.append(f"valor final menor que 10 ({format_brl(resultado_final)})")
+                    motivos.append(f"valor final menor que 10 ({formatar_brl(resultado_final)})")
                 if diferenca <= 0:
-                    motivos.append("jogador teve lucro")
+                    motivos.append("jogador teve lucro (sem perdas para cashback)")
                 st.info("Motivo(s): " + ", ".join(motivos))
             else:
-                st.success(f"✅ O jogador deve receber **{format_brl(resultado_final)}** em cashback!")
+                st.success(f"✅ O jogador deve receber **{formatar_brl(resultado_final)}** em cashback!")
 
-            # Resumo por jogo (visão do jogador)
-            st.divider()
-            st.subheader("🎮 Resumo por Jogo (Rodadas Reais)")
-            resumo_jogos = df_reais.groupby(game_col).agg(
-                Total_Apostado=(bet_col, "sum"),
-                Total_Payout=(payout_col, "sum"),
-                Rodadas=(bet_col, "count")
-            ).reset_index()
-
-            for _, row in resumo_jogos.iterrows():
-                lucro_jogador = row["Total_Payout"] - row["Total_Apostado"]
-                st.markdown(f"#### 🎯 {row[game_col]}")
-                st.markdown(f"- Rodadas: {int(row['Rodadas'])}")
-                st.markdown(f"- Total Apostado: {format_brl(row['Total_Apostado'])}")
-                st.markdown(f"- Total Pago: {format_brl(row['Total_Payout'])}")
-                st.markdown(f"- Lucro do jogador: {lucro_colorido(lucro_jogador)}")
+            # RESUMO POR JOGO (aqui visão do jogador)
+            if coluna_jogo:
                 st.divider()
+                st.subheader("🎮 Resumo por Jogo (Rodadas Reais)")
+                resumo_jogos = df_reais.groupby(coluna_jogo).agg(
+                    Total_Apostado=(coluna_bet, 'sum'),
+                    Total_Payout=(coluna_payout, 'sum'),
+                    Rodadas=(coluna_bet, 'count')
+                ).reset_index()
+
+                for _, linha in resumo_jogos.iterrows():
+                    st.markdown(f"#### 🎯 {linha[coluna_jogo]}")
+                    st.write(f"📊 Total de rodadas: {int(linha['Rodadas'])}")
+                    st.write(f"💰 Total apostado: {formatar_brl(linha['Total_Apostado'])}")
+                    st.write(f"🏆 Total ganho (payout): {formatar_brl(linha['Total_Payout'])}")
+                    lucro = linha['Total_Payout'] - linha['Total_Apostado']  # visão do jogador
+                    st.markdown(mostrar_lucro(lucro), unsafe_allow_html=True)
+                    st.divider()
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
@@ -152,104 +156,86 @@ with abas[0]:
 # ABA 2 - RESUMO DETALHADO
 # =============================
 with abas[1]:
-    st.header("📊 Resumo Detalhado por Jogo")
-    arquivo2 = st.file_uploader("Envie o arquivo .csv", type=["csv"], key="file2")
+    st.header("🎯 Resumo Detalhado por Jogo")
 
-    if arquivo2:
+    uploaded_file2 = st.file_uploader("Envie o arquivo CSV do jogador", type=["csv"], key="detalhado")
+
+    if uploaded_file2:
         try:
-            df = pd.read_csv(arquivo2)
-            df.columns = [col.strip() for col in df.columns]
+            raw = uploaded_file2.read().decode("utf-8")
+            sep = ',' if raw.count(',') > raw.count(';') else ';'
+            df = pd.read_csv(io.StringIO(raw), sep=sep)
 
-            # -----------------------------
-            # ID do jogador
-            # -----------------------------
-            if "Client ID" in df.columns:
-                player_id = df["Client ID"].iloc[0]
-                st.markdown(f"### 🆔 ID do Jogador: {player_id}")
+            # localizar colunas
+            coluna_jogo = next((c for c in df.columns if 'game' in c.lower() or 'nome' in c.lower()), None)
+            coluna_bet = next((c for c in df.columns if 'bet' in c.lower()), None)
+            coluna_payout = next((c for c in df.columns if 'payout' in c.lower()), None)
+            coluna_data = next((c for c in df.columns if 'creation' in c.lower() or 'date' in c.lower()), None)
+            coluna_free = next((c for c in df.columns if 'free' in c.lower()), None)
 
-            data_col = df.columns[1]
-            free_col = "Free Spin"
-            bet_col = "Bet"
-            payout_col = "Payout"
-            game_col = "Game Name"
-
-            df[bet_col] = df[bet_col].apply(converter_numero)
-            df[payout_col] = df[payout_col].apply(converter_numero)
-            df[data_col] = pd.to_datetime(df[data_col], errors="coerce")
-
-            # Filtro data/hora inicial e final
-            st.subheader("⏰ Filtro por Data e Hora")
-            data_inicio = st.date_input("Data inicial")
-            hora_inicio_txt = st.text_input("Hora inicial (HH:MM)", "00:00")
-            data_fim = st.date_input("Data final")
-            hora_fim_txt = st.text_input("Hora final (HH:MM)", "23:59")
-
-            try:
-                hora_inicio = datetime.strptime(hora_inicio_txt, "%H:%M").time()
-                hora_fim = datetime.strptime(hora_fim_txt, "%H:%M").time()
-                data_hora_inicio = datetime.combine(data_inicio, hora_inicio)
-                data_hora_fim = datetime.combine(data_fim, hora_fim)
-            except ValueError:
-                st.error("❌ Formato de hora inválido! Use HH:MM (ex: 14:30).")
+            if not all([coluna_jogo, coluna_bet, coluna_payout, coluna_data]):
+                st.error("❌ O CSV precisa conter as colunas 'Game Name', 'Bet', 'Payout' e 'Creation Date'.")
                 st.stop()
 
-            df = df[(df[data_col] >= data_hora_inicio) & (df[data_col] <= data_hora_fim)]
+            # conversões
+            df[coluna_bet] = df[coluna_bet].apply(converter_numero)
+            df[coluna_payout] = df[coluna_payout].apply(converter_numero)
+            df[coluna_data] = pd.to_datetime(df[coluna_data], errors='coerce')
 
-            st.markdown("---")
-            st.subheader("🎯 Resultado por Jogo")
+            if coluna_free:
+                df['Free Spin'] = df[coluna_free].astype(str).str.lower()
+            else:
+                df['Free Spin'] = 'false'
 
-            linhas_relatorio = []
-            jogos = df[game_col].unique()
+            # -----------------------------
+            # FILTROS DE DATA E HORA (inicial + final)
+            # -----------------------------
+            st.markdown("### 📅 Filtro por Data e Hora (intervalo)")
+
+            data_min = df[coluna_data].min()
+            data_max = df[coluna_data].max()
+
+            col1, col2 = st.columns(2)
+            with col1:
+                data_inicio = st.date_input("📆 Data inicial", value=data_min.date(), min_value=data_min.date(), max_value=data_max.date())
+                hora_inicio = st.time_input("🕓 Hora inicial", value=data_min.time())
+            with col2:
+                data_fim = st.date_input("📆 Data final(vem automatico da ultima aposta)", value=data_max.date(), min_value=data_min.date(), max_value=data_max.date())
+                hora_fim = st.time_input("🕕 Hora final(vem automatico da ultima aposta)", value=data_max.time())
+
+            dt_inicio = datetime.combine(data_inicio, hora_inicio)
+            dt_fim = datetime.combine(data_fim, hora_fim)
+
+            # aplica filtro por intervalo
+            df = df[(df[coluna_data] >= dt_inicio) & (df[coluna_data] <= dt_fim)]
+
+            # EXIBIÇÃO DOS RESULTADOS
+            jogos = df[coluna_jogo].unique()
 
             for jogo in jogos:
-                df_jogo = df[df[game_col] == jogo]
-                df_reais = df_jogo[df_jogo[free_col].astype(str).str.lower() == "false"]
-                df_free = df_jogo[df_jogo[free_col].astype(str).str.lower() == "true"]
+                st.markdown(f"### 🎮 {jogo}")
 
-                def resumo_tipo(df_tipo, tipo):
-                    if df_tipo.empty:
-                        return f"**Rodadas {tipo}:** Nenhuma rodada\n"
-                    total_rodadas = len(df_tipo)
-                    total_apostado = df_tipo[bet_col].sum()
-                    total_payout = df_tipo[payout_col].sum()
-                    lucro_jogador = total_payout - total_apostado
-                    primeira = df_tipo[data_col].min()
-                    ultima = df_tipo[data_col].max()
-                    return f"**Rodadas {tipo}:**\n" \
-                           f"- Total de rodadas: {total_rodadas}\n" \
-                           f"- Total apostado: {format_brl(total_apostado)}\n" \
-                           f"- Total payout: {format_brl(total_payout)}\n" \
-                           f"- Lucro do jogador: {lucro_colorido(lucro_jogador)}\n" \
-                           f"- Primeira rodada: {primeira.strftime('%d/%m/%Y %H:%M')}\n" \
-                           f"- Última rodada: {ultima.strftime('%d/%m/%Y %H:%M')}\n"
+                for status in ['false', 'true']:
+                    tipo = "Rodadas Reais" if status == 'false' else "Rodadas Gratuitas"
+                    subset = df[(df[coluna_jogo] == jogo) & (df['Free Spin'] == status)]
 
-                st.markdown(f"### 🎰 {jogo}")
-                st.markdown(resumo_tipo(df_reais, "reais"))
-                st.markdown(resumo_tipo(df_free, "gratuitas"))
+                    if not subset.empty:
+                        total_rodadas = len(subset)
+                        total_apostado = subset[coluna_bet].sum()
+                        total_payout = subset[coluna_payout].sum()
+                        lucro = total_payout - total_apostado
 
-                # Resumo geral por jogo
-                total_jogo_apostado = df_jogo[bet_col].sum()
-                total_jogo_payout = df_jogo[payout_col].sum()
-                lucro_jogo = total_jogo_payout - total_jogo_apostado
-                st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
-                st.markdown("---")
+                        primeira_data = subset[coluna_data].min().strftime("%d/%m/%Y %H:%M")
+                        ultima_data = subset[coluna_data].max().strftime("%d/%m/%Y %H:%M")
 
-                linhas_relatorio.append({
-                    "Jogo": jogo,
-                    "Total Apostado": total_jogo_apostado,
-                    "Total Pago": total_jogo_payout,
-                    "Lucro do Jogador": lucro_jogo
-                })
-
-            df_relatorio = pd.DataFrame(linhas_relatorio)
-            relatorio_csv = gerar_relatorio_csv(df_relatorio)
-
-            st.download_button(
-                label="📥 Baixar Relatório Completo",
-                data=relatorio_csv,
-                file_name="relatorio_jogos.csv",
-                mime="text/csv"
-            )
+                        st.markdown(f"#### 🎯 {tipo}")
+                        st.write(f"**Total de rodadas:** {total_rodadas}")
+                        st.write(f"**Total apostado:** {formatar_brl(total_apostado)}")
+                        st.write(f"**Total ganho (payout):** {formatar_brl(total_payout)}")
+                        st.markdown(mostrar_lucro(lucro), unsafe_allow_html=True)
+                        st.write(f"**Primeira rodada:** {primeira_data}")
+                        st.write(f"**Última rodada:** {ultima_data}")
+                        st.divider()
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
