@@ -157,7 +157,6 @@ with abas[0]:
 # =============================
 with abas[1]:
     st.header("📊 Resumo Detalhado por Jogo")
-
     arquivo2 = st.file_uploader("Envie o arquivo .csv", type=["csv"], key="file2")
 
     if arquivo2:
@@ -171,14 +170,14 @@ with abas[1]:
             payout_col = "Payout"
             game_col = "Game Name"
 
+            df[bet_col] = df[bet_col].apply(converter_numero)
+            df[payout_col] = df[payout_col].apply(converter_numero)
             df[data_col] = pd.to_datetime(df[data_col], errors="coerce")
 
-            # 🔹 Filtros de data/hora com entrada livre
+            # Filtro data/hora inicial e final
             st.subheader("⏰ Filtro por Data e Hora")
-
             data_inicio = st.date_input("Data inicial")
             hora_inicio_txt = st.text_input("Hora inicial (HH:MM)", "00:00")
-
             data_fim = st.date_input("Data final")
             hora_fim_txt = st.text_input("Hora final (HH:MM)", "23:59")
 
@@ -196,8 +195,8 @@ with abas[1]:
             st.markdown("---")
             st.subheader("🎯 Resultado por Jogo")
 
-            jogos = df[game_col].unique()
             linhas_relatorio = []
+            jogos = df[game_col].unique()
 
             for jogo in jogos:
                 df_jogo = df[df[game_col] == jogo]
@@ -206,15 +205,13 @@ with abas[1]:
 
                 def resumo_tipo(df_tipo, tipo):
                     if df_tipo.empty:
-                        return f"**Rodadas {tipo}:** Nenhuma rodada encontrada\n"
-
+                        return f"**Rodadas {tipo}:** Nenhuma rodada\n"
                     total_rodadas = len(df_tipo)
                     total_apostado = df_tipo[bet_col].sum()
                     total_payout = df_tipo[payout_col].sum()
                     lucro_jogador = total_payout - total_apostado
                     primeira = df_tipo[data_col].min()
                     ultima = df_tipo[data_col].max()
-
                     return (
                         f"**Rodadas {tipo}:**\n"
                         f"- Total de rodadas: {total_rodadas}\n"
@@ -229,11 +226,10 @@ with abas[1]:
                 st.markdown(resumo_tipo(df_reais, "reais"))
                 st.markdown(resumo_tipo(df_free, "gratuitas"))
 
-                # Resumo geral
+                # Resumo geral por jogo
                 total_jogo_apostado = df_jogo[bet_col].sum()
                 total_jogo_payout = df_jogo[payout_col].sum()
                 lucro_jogo = total_jogo_payout - total_jogo_apostado
-
                 st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
                 st.markdown("---")
 
@@ -245,16 +241,14 @@ with abas[1]:
                 })
 
             df_relatorio = pd.DataFrame(linhas_relatorio)
-            relatorio_bytes = gerar_relatorio_csv(df_relatorio)
+            relatorio_csv = gerar_relatorio_csv(df_relatorio)
 
             st.download_button(
                 label="📥 Baixar Relatório Completo",
-                data=relatorio_bytes,
+                data=relatorio_csv,
                 file_name="relatorio_jogos.csv",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                mime="text/csv"
             )
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
-
