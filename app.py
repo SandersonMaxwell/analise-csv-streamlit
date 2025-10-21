@@ -171,23 +171,25 @@ with abas[1]:
     if arquivo2:
         try:
             df = pd.read_csv(arquivo2)
-            df.columns = [c.strip() for c in df.columns]
+            df.columns = [c.strip() for c in df.columns]  # remove espaços extras
+            st.write("Colunas do CSV:", df.columns.tolist())
 
             # -----------------------------
             # ID do jogador
             # -----------------------------
-            if "Client ID" in df.columns:
-                player_id = df["Client ID"].iloc[0]
-                st.markdown(f"### 🆔 ID do Jogador: {player_id}")
+            player_id = df["Client ID"].iloc[0] if "Client ID" in df.columns else "Desconhecido"
+            st.markdown(f"### 🆔 ID do Jogador: {player_id}")
 
+            # -----------------------------
             # Colunas
+            # -----------------------------
             data_col = df.columns[1]
             free_col = "Free Spin"
             bet_col = "Bet"
             payout_col = "Payout"
             game_col = "Game Name"
 
-            # Conversões
+            # Conversões numéricas
             df[bet_col] = df[bet_col].apply(converter_numero)
             df[payout_col] = df[payout_col].apply(converter_numero)
             df[data_col] = pd.to_datetime(df[data_col], errors="coerce")
@@ -211,6 +213,9 @@ with abas[1]:
                 st.stop()
 
             df = df[(df[data_col] >= data_hora_inicio) & (df[data_col] <= data_hora_fim)]
+            st.write(f"Linhas após filtro de data/hora: {len(df)}")
+            if df.empty:
+                st.warning("Nenhuma rodada encontrada no período selecionado.")
 
             st.markdown("---")
             st.subheader("🎯 Resultado por Jogo")
@@ -227,8 +232,10 @@ with abas[1]:
 
             for jogo in jogos:
                 df_jogo = df[df[game_col] == jogo]
-                df_reais = df_jogo[df_jogo[free_col].astype(str).str.lower() == "false"]
-                df_free = df_jogo[df_jogo[free_col].astype(str).str.lower() == "true"]
+
+                # Free Spin filtro flexível
+                df_reais = df_jogo[df_jogo[free_col].astype(str).str.lower().isin(["false","0","no"])]
+                df_free = df_jogo[df_jogo[free_col].astype(str).str.lower().isin(["true","1","yes"])]
 
                 def resumo_tipo(df_tipo, tipo):
                     if df_tipo.empty:
@@ -251,7 +258,7 @@ with abas[1]:
                 st.markdown(resumo_tipo(df_reais, "reais"), unsafe_allow_html=True)
                 st.markdown(resumo_tipo(df_free, "gratuitas"), unsafe_allow_html=True)
 
-                # Resumo geral por jogo
+                # Resumo geral do jogo
                 total_jogo_apostado = df_jogo[bet_col].sum()
                 total_jogo_payout = df_jogo[payout_col].sum()
                 lucro_jogo = total_jogo_payout - total_jogo_apostado
@@ -272,14 +279,17 @@ with abas[1]:
             if "Lucro do Jogador" not in df_relatorio.columns:
                 df_relatorio["Lucro do Jogador"] = 0
 
-            # Função para gerar CSV
             def gerar_relatorio_csv(df_rel):
                 return df_rel.to_csv(index=False).encode("utf-8")
 
             relatorio_csv = gerar_relatorio_csv(df_relatorio)
 
-    
-            
+            st.download_button(
+                label="📥 Baixar Relatório Completo",
+                data=relatorio_csv,
+                file_name="relatorio_jogos.csv",
+                mime="text/csv"
+            )
 
             # -----------------------------
             # Análise com Net Deposit
@@ -299,5 +309,3 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
-
