@@ -76,7 +76,7 @@ with abas[0]:
             # ID do jogador
             # -----------------------------
             if "Client" in df.columns:
-                player_id = df["Client ID"].iloc[0]
+                player_id = df["Client"].iloc[0]
                 st.markdown(f"### 🆔 ID do Jogador: {player_id}")
 
 
@@ -248,6 +248,7 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
