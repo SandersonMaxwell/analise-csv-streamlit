@@ -250,29 +250,30 @@ with abas[1]:
                         st.write(f"**Primeira rodada:** {primeira_data}")
                         st.write(f"**Última rodada:** {ultima_data}")
                         st.divider()
-# -----------------------------
-# Análise com Net Deposit
-# -----------------------------
-st.subheader("💵 Análise de Banca com Net Deposit")
-
-net_deposit_input = st.text_input("Informe o Net Deposit do jogador (R$)", "0,00")
-
-# Converter para float
-def parse_brl(valor):
-    try:
-        return float(str(valor).replace("R$", "").replace(".", "").replace(",", "."))
-    except:
-        return 0
-
-net_deposit = parse_brl(net_deposit_input)
-
-# Calcular banca estimada
-banca_total = net_deposit + df_relatorio["Lucro do Jogador"].sum()
-st.markdown(f"**Banca estimada do jogador considerando Net Deposit e resultados:** {format_brl(banca_total)}")
+                        # -----------------------------
+                        # Análise com Net Deposit
+                        # -----------------------------
+                        st.subheader("💵 Análise de Banca com Net Deposit")
+                        
+                        net_deposit_input = st.text_input("Informe o Net Deposit do jogador (R$)", "0,00")
+                        
+                        # Converter para float
+                        def parse_brl(valor):
+                            try:
+                                return float(str(valor).replace("R$", "").replace(".", "").replace(",", "."))
+                            except:
+                                return 0
+                        
+                        net_deposit = parse_brl(net_deposit_input)
+                        
+                        # Calcular banca estimada
+                        banca_total = net_deposit + df_relatorio["Lucro do Jogador"].sum()
+                        st.markdown(f"**Banca estimada do jogador considerando Net Deposit e resultados:** {format_brl(banca_total)}")
 
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
