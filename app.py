@@ -251,8 +251,8 @@ with abas[1]:
                 st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
                 st.markdown("---")
 
-               df_relatorio = pd.DataFrame(linhas_relatorio)
-            )
+            df_relatorio = pd.DataFrame(linhas_relatorio)
+            
             # -----------------------------
             # Análise com Net Deposit
             # -----------------------------
@@ -271,6 +271,7 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
