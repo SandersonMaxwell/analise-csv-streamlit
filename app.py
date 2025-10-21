@@ -251,8 +251,21 @@ with abas[1]:
                 st.markdown(f"**📈 Lucro total (reais + gratuitas):** {lucro_colorido(lucro_jogo)}")
                 st.markdown("---")
 
+                linhas_relatorio.append({
+                    "Jogo": jogo,
+                    "Total Apostado": total_jogo_apostado,
+                    "Total Pago": total_jogo_payout,
+                    "Lucro do Jogador": lucro_jogo
+                })
+
+            # -----------------------------
+            # DataFrame final para download
+            # -----------------------------
             df_relatorio = pd.DataFrame(linhas_relatorio)
-            
+            relatorio_csv = gerar_relatorio_csv(df_relatorio)
+
+
+
             # -----------------------------
             # Análise com Net Deposit
             # -----------------------------
@@ -271,8 +284,3 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
-
-
-
-
