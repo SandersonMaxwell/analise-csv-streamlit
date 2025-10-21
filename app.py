@@ -174,6 +174,11 @@ with abas[1]:
             raw = uploaded_file2.read().decode("utf-8")
             sep = ',' if raw.count(',') > raw.count(';') else ';'
             df = pd.read_csv(io.StringIO(raw), sep=sep)
+            
+            if "Client" in df.columns:
+                player_id = df["Client"].iloc[0]
+                st.markdown(f"### 🆔 ID do Jogador: {player_id}")
+
 
             # localizar colunas
             coluna_jogo = next((c for c in df.columns if 'game' in c.lower() or 'nome' in c.lower()), None)
@@ -248,6 +253,7 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
