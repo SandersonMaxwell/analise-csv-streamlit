@@ -164,6 +164,9 @@ with abas[0]:
 # =============================
 # ABA 2 - RESUMO DETALHADO
 # =============================
+# =============================
+# ABA 2 - RESUMO DETALHADO
+# =============================
 with abas[1]:
     st.header("🎯 Resumo Detalhado por Jogo")
 
@@ -178,7 +181,6 @@ with abas[1]:
             if "Client" in df.columns:
                 player_id = df["Client"].iloc[0]
                 st.markdown(f"### 🆔 ID do Jogador: {player_id}")
-
 
             # localizar colunas
             coluna_jogo = next((c for c in df.columns if 'game' in c.lower() or 'nome' in c.lower()), None)
@@ -202,7 +204,7 @@ with abas[1]:
                 df['Free Spin'] = 'false'
 
             # -----------------------------
-            # FILTROS DE DATA E HORA (inicial + final)
+            # FILTROS DE DATA E HORA
             # -----------------------------
             st.markdown("### 📅 Filtro por Data e Hora (intervalo)")
 
@@ -211,19 +213,44 @@ with abas[1]:
 
             col1, col2 = st.columns(2)
             with col1:
-                data_inicio = st.date_input("📆 Data inicial (vem automatico da primeira aposta)", value=data_min.date(), min_value=data_min.date(), max_value=data_max.date())
-                hora_inicio = st.time_input("🕓 Hora inicial (vem automatico da primeira aposta)", value=data_min.time())
+                data_inicio = st.date_input("📆 Data inicial", value=data_min.date(), min_value=data_min.date(), max_value=data_max.date())
+                hora_inicio = st.time_input("🕓 Hora inicial", value=data_min.time())
             with col2:
-                data_fim = st.date_input("📆 Data final (vem automatico da ultima aposta)", value=data_max.date(), min_value=data_min.date(), max_value=data_max.date())
-                hora_fim = st.time_input("🕕 Hora final (vem automatico da ultima aposta)", value=data_max.time())
+                data_fim = st.date_input("📆 Data final", value=data_max.date(), min_value=data_min.date(), max_value=data_max.date())
+                hora_fim = st.time_input("🕕 Hora final", value=data_max.time())
 
             dt_inicio = datetime.combine(data_inicio, hora_inicio)
             dt_fim = datetime.combine(data_fim, hora_fim)
 
-            # aplica filtro por intervalo
+            # aplica filtro
             df = df[(df[coluna_data] >= dt_inicio) & (df[coluna_data] <= dt_fim)]
 
-            # EXIBIÇÃO DOS RESULTADOS
+            # -----------------------------
+            # CALCULAR LUCRO TOTAL DO JOGADOR
+            # -----------------------------
+            lucro_total = df[coluna_payout].sum() - df[coluna_bet].sum()
+            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(lucro_total)}", unsafe_allow_html=True)
+
+            # -----------------------------
+            # INSERIR VALOR ADICIONAL PARA BANCA
+            # -----------------------------
+            valor_adicional = st.number_input(
+                "💵 Insira um valor em R$ para somar ao lucro total (ex: banca inicial):",
+                min_value=0.0,
+                value=0.0,
+                step=10.0,
+                format="%.2f"
+            )
+
+            # calcula banca estimada sem interferir no lucro original
+            banca_estimada = lucro_total + valor_adicional
+            st.markdown(f"### 🏦 Banca estimada do jogador: {formatar_brl(banca_estimada)}", unsafe_allow_html=True)
+
+            st.divider()
+
+            # -----------------------------
+            # EXIBIÇÃO POR JOGO
+            # -----------------------------
             jogos = df[coluna_jogo].unique()
 
             for jogo in jogos:
@@ -250,33 +277,21 @@ with abas[1]:
                         st.write(f"**Primeira rodada:** {primeira_data}")
                         st.write(f"**Última rodada:** {ultima_data}")
                         st.divider()
+
             # -----------------------------
-            # CALCULAR LUCRO TOTAL DO JOGADOR (TRAVADO)
+            # TOTAL DE RODADAS REAIS E GRÁTIS
             # -----------------------------
-            if 'lucro_total' not in st.session_state:
-                st.session_state['lucro_total'] = df[coluna_payout].sum() - df[coluna_bet].sum()
-            
-            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(st.session_state['lucro_total'])}", unsafe_allow_html=False)
-            
             total_reais = len(df[df['Free Spin'] == 'false'])
             total_gratis = len(df[df['Free Spin'] == 'true'])
+            total_geral = total_reais + total_gratis
 
             st.markdown("## 🎲 Totais Gerais")
             st.write(f"🧮 **Total de rodadas reais:** {total_reais}")
             st.write(f"🎁 **Total de rodadas grátis:** {total_gratis}")
-    
-            
+            st.write(f"🎯 **Total geral de rodadas:** {total_geral}")
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
-
-
-
-
-
-
-
 
 
 
