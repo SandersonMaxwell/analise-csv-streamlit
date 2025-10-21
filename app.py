@@ -258,11 +258,18 @@ with abas[1]:
             
             st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(st.session_state['lucro_total'])}", unsafe_allow_html=True)
             
+            total_reais = len(df[df['Free Spin'] == 'false'])
+            total_gratis = len(df[df['Free Spin'] == 'true'])
+
+            st.markdown("## 🎲 Totais Gerais")
+            st.write(f"🧮 **Total de rodadas reais:** {total_reais}")
+            st.write(f"🎁 **Total de rodadas grátis:** {total_gratis}")
     
             
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
