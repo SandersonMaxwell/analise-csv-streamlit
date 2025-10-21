@@ -251,10 +251,12 @@ with abas[1]:
                         st.write(f"**Última rodada:** {ultima_data}")
                         st.divider()
             # -----------------------------
-            # CALCULAR LUCRO TOTAL DO JOGADOR
+            # CALCULAR LUCRO TOTAL DO JOGADOR (TRAVADO)
             # -----------------------------
-            lucro_total = df[coluna_payout].sum() - df[coluna_bet].sum()
-            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(lucro_total)}", unsafe_allow_html=True)
+            if 'lucro_total' not in st.session_state:
+                st.session_state['lucro_total'] = df[coluna_payout].sum() - df[coluna_bet].sum()
+            
+            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(st.session_state['lucro_total'])}", unsafe_allow_html=True)
             
             # -----------------------------
             # ESTIMAR BANCA DO JOGADOR
@@ -267,13 +269,13 @@ with abas[1]:
                 format="%.2f"
             )
             
-            # Criar nova variável apenas para exibição
-            banca_estimada = lucro_total + valor_adicional
+            banca_estimada = st.session_state['lucro_total'] + valor_adicional
             st.markdown(f"### 🏦 Banca estimada do jogador: {formatar_brl(banca_estimada)}", unsafe_allow_html=True)
             
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
