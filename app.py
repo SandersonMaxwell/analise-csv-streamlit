@@ -222,6 +222,11 @@ with abas[1]:
 
             # aplica filtro por intervalo
             df = df[(df[coluna_data] >= dt_inicio) & (df[coluna_data] <= dt_fim)]
+            # -----------------------------
+            # CALCULAR LUCRO TOTAL DO JOGADOR
+            # -----------------------------
+            lucro_total = df[coluna_payout].sum() - df[coluna_bet].sum()
+            st.markdown(f"## 💰 Lucro total do jogador: {formatar_brl(lucro_total)}", unsafe_allow_html=True)
 
             # EXIBIÇÃO DOS RESULTADOS
             jogos = df[coluna_jogo].unique()
@@ -253,6 +258,7 @@ with abas[1]:
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
+
 
 
 
